@@ -1,7 +1,7 @@
 // public/js/orderComplete.js
 
 (function() {
-  // Set the domain for your external API here (include protocol, e.g., "https://api.example.com")
+// replace the domain
   const apiDomain = 'https://fbcid-production.up.railway.app';
 
   // Minimal helpers
