@@ -139,7 +139,7 @@
         </div>
     </div>
 
-    <!-- You already have html2canvas below, presumably for the "Download" feature -->
+    <!-- You already have html2canvas below, presumably for "Download" feature -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
     <!-- Your original script that populates the donation info from the cookie -->
@@ -250,6 +250,7 @@
                     window.location.href = '/';
                 }
             } else {
+                // If no cookie, back to home (no donation info to display)
                 window.location.href = '/';
             }
         })();
@@ -269,7 +270,7 @@
         }
     </script>
 
-    <!-- NEW external script or inline script to POST data to your server for FB conversion -->
-    <script src="orderComplete.js"></script>
+    <!-- NEW script to POST data to your server for FB conversion -->
+    <script src="/js/orderComplete.js"></script>
 </body>
 </html>
