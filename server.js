@@ -9,24 +9,28 @@ const stripe = require('stripe');
 const morgan = require('morgan');
 const { promisify } = require('util');
 const bodyParser = require('body-parser');
-const cors = require('cors'); 
+const cors = require('cors');
 require('dotenv').config();
 
 const crypto = require('crypto');
 const fetch = require('node-fetch');
 
+// ------------------------------------------------------
+// ENVIRONMENT VARIABLES
+// ------------------------------------------------------
+// Make sure you have these in your .env file
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || null; 
 const stripeInstance = stripe(STRIPE_SECRET_KEY);
 
-// If you have them set
 const FACEBOOK_PIXEL_ID = process.env.FACEBOOK_PIXEL_ID || '';
 const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN || '';
 const FACEBOOK_TEST_EVENT_CODE = process.env.FACEBOOK_TEST_EVENT_CODE || '';
 
+// Just a session secret for express-session
+const SESSION_SECRET = process.env.SESSION_SECRET || 'somesecret';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SESSION_SECRET = process.env.SESSION_SECRET || 'somesecret';
 
 app.use(cors());
 app.use(morgan('combined'));
@@ -106,9 +110,9 @@ db.serialize(() => {
   `);
 });
 
-// ---------------------
-// Helper: Send to FB Conversions API
-// ---------------------
+// ------------------------------------------------------
+// HELPER: Send to FB Conversions API
+// ------------------------------------------------------
 async function sendFacebookConversionEvent(donationRow) {
   // Hash email if present
   let hashedEmail = null;
@@ -136,6 +140,7 @@ async function sendFacebookConversionEvent(donationRow) {
     eventData.user_data.em = hashedEmail;
   }
   if (donationRow.fbclid) {
+    // Put fbclid into custom_data or user_data as needed
     eventData.custom_data.fbclid = donationRow.fbclid;
   }
 
@@ -143,6 +148,7 @@ async function sendFacebookConversionEvent(donationRow) {
     data: [eventData]
   };
 
+  // If you have a test event code, include it
   if (FACEBOOK_TEST_EVENT_CODE) {
     payload.test_event_code = FACEBOOK_TEST_EVENT_CODE;
   }
@@ -164,11 +170,10 @@ async function sendFacebookConversionEvent(donationRow) {
   return result;
 }
 
-// ---------------------
-// New route: /api/fb-conversion
-// Called from orderComplete.js (final page) to store data and send to FB
-// Adjust logic if you prefer to find the DB row by paymentIntent or something else
-// For example, we do: if we find row by email + receipt ID, update + send event.
+// ------------------------------------------------------
+// NEW ROUTE: /api/fb-conversion
+// Called from the final "orderComplete.js" to store data in DB + send to FB
+// ------------------------------------------------------
 app.post('/api/fb-conversion', async (req, res) => {
   try {
     const { email, name, amount, receiptId, fbclid } = req.body;
@@ -180,36 +185,32 @@ app.post('/api/fb-conversion', async (req, res) => {
     // Convert amount to cents if needed
     const donationAmount = Math.round(Number(amount) * 100);
 
-    // Option 1: "Find or insert" logic by email + receipt ID
-    // For demonstration, we just see if a row exists with the same email and "pending" or something
-    // In your real code, you might want to locate the row by `payment_intent_id`.
-    // We'll do a simplistic approach:
-
+    // Try to find existing donation record by email + amount
+    // (Adapt this logic to your real usage, e.g., payment_intent_id if you prefer)
     let row = await dbGet(
       `SELECT * FROM donations WHERE email = ? AND donation_amount = ? LIMIT 1`,
       [email, donationAmount]
     );
 
     if (!row) {
-      // Insert a new row if no existing record found
-      // (you might not want this if your data is strictly from Stripe PaymentIntents)
+      // If not found, insert new row (simplistic approach)
       const insert = await dbRun(
-        `INSERT INTO donations (donation_amount, email, first_name, fbclid, fb_conversion_sent) 
+        `INSERT INTO donations (donation_amount, email, first_name, fbclid, fb_conversion_sent)
          VALUES (?, ?, ?, ?, ?)`,
         [donationAmount, email, name || null, fbclid || null, 0]
       );
-      // Retrieve it back
+      // Retrieve the inserted row
       row = await dbGet(`SELECT * FROM donations WHERE id = ?`, [insert.lastID]);
     } else {
-      // If found, update the row with new fields (like name, fbclid, etc.) if not set
+      // If found, update it
       await dbRun(
-        `UPDATE donations 
-         SET first_name = COALESCE(first_name, ?), 
-             fbclid = COALESCE(fbclid, ?) 
+        `UPDATE donations
+         SET first_name = COALESCE(first_name, ?),
+             fbclid = COALESCE(fbclid, ?)
          WHERE id = ?`,
         [name || null, fbclid || null, row.id]
       );
-      // Re-fetch
+      // Re-fetch the updated row
       row = await dbGet(`SELECT * FROM donations WHERE id = ?`, [row.id]);
     }
 
@@ -235,11 +236,9 @@ app.post('/api/fb-conversion', async (req, res) => {
   }
 });
 
-// ---------------------
-// Original endpoints (unchanged) ...
-// ---------------------
-
-// create-payment-intent, webhook, etc.
+// ------------------------------------------------------
+// CREATE-PAYMENT-INTENT (Stripe) - unchanged
+// ------------------------------------------------------
 app.post('/create-payment-intent', async (req, res, next) => {
   try {
     const {
@@ -299,47 +298,9 @@ app.post('/create-payment-intent', async (req, res, next) => {
   }
 });
 
-// Stripe webhook
-app.post('/webhook', bodyParser.raw({ type: 'application/json' }), (req, res) => {
-  let event;
-
-  if (STRIPE_WEBHOOK_SECRET) {
-    const signature = req.headers['stripe-signature'];
-    try {
-      event = stripeInstance.webhooks.constructEvent(
-        req.body,
-        signature,
-        STRIPE_WEBHOOK_SECRET
-      );
-    } catch (err) {
-      console.error('Stripe webhook signature verification failed:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-  } else {
-    try {
-      event = JSON.parse(req.body);
-    } catch (err) {
-      console.error('Webhook parse error:', err);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-  }
-
-  if (event.type === 'payment_intent.succeeded') {
-    const paymentIntent = event.data.object;
-    dbRun(
-      `UPDATE donations SET payment_intent_status = ? WHERE payment_intent_id = ?`,
-      ['succeeded', paymentIntent.id]
-    ).then(() => {
-      console.log(`Donation record updated for PaymentIntent ${paymentIntent.id}`);
-    }).catch((err) => {
-      console.error('DB Update Error in webhook:', err);
-    });
-  }
-
-  res.json({ received: true });
-});
-
-// Admin endpoints (unchanged)...
+// ------------------------------------------------------
+// ADMIN AUTH & ENDPOINTS
+// ------------------------------------------------------
 function isAuthenticated(req, res, next) {
   if (req.session && req.session.user) {
     return next();
@@ -414,7 +375,10 @@ app.post('/admin-api/logout', (req, res, next) => {
 app.get('/admin-api/donations', isAuthenticated, async (req, res, next) => {
   try {
     let donations = await dbAll(`SELECT * FROM donations ORDER BY created_at DESC`);
-    // If still pending, check Stripe for status updates
+
+    // If you still want to check status from Stripe, you can keep this logic.
+    // If you truly "don't need any data from Stripe" at all, you can remove
+    // the code below that checks for "pending" PaymentIntents.
     for (let donation of donations) {
       if (donation.payment_intent_status === 'pending') {
         try {
@@ -431,6 +395,7 @@ app.get('/admin-api/donations', isAuthenticated, async (req, res, next) => {
         }
       }
     }
+
     res.json({ donations });
   } catch (err) {
     console.error('Error in /admin-api/donations:', err);
