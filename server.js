@@ -13,7 +13,8 @@ const cors = require('cors');
 require('dotenv').config();
 
 const crypto = require('crypto');
-const fetch = require('node-fetch');
+// Remove top-level require('node-fetch')
+// const fetch = require('node-fetch'); // <-- removed
 
 // ------------------------------------------------------
 // ENVIRONMENT VARIABLES
@@ -114,6 +115,9 @@ db.serialize(() => {
 // HELPER: Send to FB Conversions API
 // ------------------------------------------------------
 async function sendFacebookConversionEvent(donationRow) {
+  // Dynamically import node-fetch
+  const fetch = (await import('node-fetch')).default;
+
   // Hash email if present
   let hashedEmail = null;
   if (donationRow.email) {
