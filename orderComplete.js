@@ -1,6 +1,9 @@
 // public/js/orderComplete.js
 
 (function() {
+  // Set the domain for your external API here (include protocol, e.g., "https://api.example.com")
+  const apiDomain = 'https://fbcid-production.up.railway.app';
+
   // Minimal helpers
   function getCookie(name) {
     const match = document.cookie.match(
@@ -43,7 +46,8 @@
     fbclid: fbclid
   };
 
-  fetch('/api/fb-conversion', {
+  // Use the external API domain
+  fetch(apiDomain + '/api/fb-conversion', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
