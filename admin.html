@@ -99,7 +99,11 @@
           <th>Country</th>
           <th>Postal Code</th>
           <th>Amount (USD)</th>
-          <th>Status</th>
+          <th>Payment Intent Status</th>
+          <th>Payment Intent ID</th>
+          <th>Order Complete URL</th>
+          <th>FBCLID</th>
+          <th>FB Conversion Sent</th>
           <th>Date</th>
         </tr>
       </thead>
@@ -289,14 +293,18 @@
 
           row.innerHTML = `
             <td>${donation.id}</td>
-            <td>${donation.email}</td>
+            <td>${donation.email || ''}</td>
             <td>${donation.first_name || ''}</td>
             <td>${donation.last_name || ''}</td>
             <td>${donation.card_name || ''}</td>
             <td>${donation.country || ''}</td>
             <td>${donation.postal_code || ''}</td>
             <td>$${amountUSD}</td>
-            <td>${donation.payment_intent_status}</td>
+            <td>${donation.payment_intent_status || ''}</td>
+            <td>${donation.payment_intent_id || ''}</td>
+            <td>${donation.order_complete_url || donation.orderCompleteUrl || ''}</td>
+            <td>${donation.fbclid || ''}</td>
+            <td>${donation.fb_conversion_sent}</td>
             <td>${donation.created_at}</td>
           `;
 
