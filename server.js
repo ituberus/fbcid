@@ -9,15 +9,14 @@ const { promisify } = require('util');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
-
 const crypto = require('crypto');
-// Remove top-level require('node-fetch')
+// Removed top-level require('node-fetch') – dynamic import used below
 // const fetch = require('node-fetch'); // <-- removed
 
 // ------------------------------------------------------
 // ENVIRONMENT VARIABLES
 // ------------------------------------------------------
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const stripeInstance = stripe(STRIPE_SECRET_KEY);
 
 const FACEBOOK_PIXEL_ID = process.env.FACEBOOK_PIXEL_ID || '';
@@ -52,11 +51,14 @@ app.use(
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// SQLite setup
+// ------------------------------------------------------
+// SQLITE SETUP
+// ------------------------------------------------------
 const db = new sqlite3.Database('./database.sqlite', (err) => {
   if (err) {
+    // Previously, the code was doing process.exit(1). We remove that
+    // to avoid crashing. Instead, we just log it and keep going.
     console.error('Error opening database:', err);
-    process.exit(1);
   } else {
     console.log('Connected to SQLite database.');
   }
@@ -113,7 +115,7 @@ db.serialize(() => {
 // HELPER: Send to FB Conversions API
 // ------------------------------------------------------
 async function sendFacebookConversionEvent(donationRow) {
-  // Dynamically import node-fetch
+  // Dynamically import node-fetch to avoid top-level require
   const fetch = (await import('node-fetch')).default;
 
   // Hash email if present
@@ -125,13 +127,13 @@ async function sendFacebookConversionEvent(donationRow) {
       .digest('hex');
   }
 
-  // Build user_data object with additional fields
+  // Build user_data object
   const userData = {};
   if (hashedEmail) {
     userData.em = hashedEmail;
   }
 
-  // Include first name and last name if available.
+  // Include first name and last name if available
   if (donationRow.first_name) {
     userData.fn = crypto
       .createHash('sha256')
@@ -144,7 +146,7 @@ async function sendFacebookConversionEvent(donationRow) {
       .update(donationRow.last_name.trim().toLowerCase())
       .digest('hex');
   }
-  // If only donationRow.name is available, attempt to split it.
+  // If only donationRow.name is available, attempt to split it
   else if (donationRow.name) {
     const parts = donationRow.name.trim().split(' ');
     if (parts.length > 0) {
@@ -178,19 +180,22 @@ async function sendFacebookConversionEvent(donationRow) {
   }
 
   // Use the order_complete_url provided by the client
-  const eventSourceUrl = donationRow.orderCompleteUrl || donationRow.order_complete_url || "https://example.com/orderComplete";
+  const eventSourceUrl =
+    donationRow.orderCompleteUrl ||
+    donationRow.order_complete_url ||
+    'https://example.com/orderComplete';
 
   const eventData = {
-    event_name: "Purchase",
+    event_name: 'Purchase',
     event_time: Math.floor(Date.now() / 1000),
     event_id: String(donationRow.id),
     event_source_url: eventSourceUrl,
-    action_source: "website",
+    action_source: 'website',
     user_data: userData,
     custom_data: {
       value: donationRow.donation_amount ? donationRow.donation_amount / 100 : 0,
-      currency: "USD"
-    }
+      currency: 'USD',
+    },
   };
 
   if (donationRow.fbclid) {
@@ -198,7 +203,7 @@ async function sendFacebookConversionEvent(donationRow) {
   }
 
   const payload = {
-    data: [eventData]
+    data: [eventData],
   };
 
   if (FACEBOOK_TEST_EVENT_CODE) {
@@ -209,7 +214,7 @@ async function sendFacebookConversionEvent(donationRow) {
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -218,20 +223,19 @@ async function sendFacebookConversionEvent(donationRow) {
   }
 
   const result = await response.json();
-  console.log("Facebook conversion result:", result);
+  console.log('Facebook conversion result:', result);
   return result;
 }
 
 // ------------------------------------------------------
 // NEW ROUTE: /api/fb-conversion
-// Called from the final "orderComplete.js" to store data in DB + send to FB
 // ------------------------------------------------------
 app.post('/api/fb-conversion', async (req, res) => {
   try {
     const { email, name, amount, receiptId, fbclid, country, orderCompleteUrl } = req.body;
 
     if (!email || !amount) {
-      return res.status(400).json({ error: "Missing email or amount" });
+      return res.status(400).json({ error: 'Missing email or amount' });
     }
 
     const donationAmount = Math.round(Number(amount) * 100);
@@ -243,7 +247,7 @@ app.post('/api/fb-conversion', async (req, res) => {
     );
 
     if (!row) {
-      // Insert new row (including country and order_complete_url)
+      // Insert new row
       const insert = await dbRun(
         `INSERT INTO donations (donation_amount, email, first_name, fbclid, country, order_complete_url, fb_conversion_sent)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -251,7 +255,7 @@ app.post('/api/fb-conversion', async (req, res) => {
       );
       row = await dbGet(`SELECT * FROM donations WHERE id = ?`, [insert.lastID]);
     } else {
-      // Update existing record with new data if not already present
+      // Update existing record
       await dbRun(
         `UPDATE donations
          SET first_name = COALESCE(first_name, ?),
@@ -266,15 +270,20 @@ app.post('/api/fb-conversion', async (req, res) => {
 
     // If fb_conversion_sent is already 1, skip sending conversion
     if (row.fb_conversion_sent === 1) {
-      return res.json({ message: "Already sent conversion for that donation." });
+      return res.json({ message: 'Already sent conversion for that donation.' });
     }
 
-    // Capture client IP and user agent from the request headers
-    const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || '';
+    // Capture client IP and user agent from the request
+    const clientIp =
+      req.headers['x-forwarded-for'] ||
+      req.connection?.remoteAddress ||
+      req.socket?.remoteAddress ||
+      '';
     const clientUserAgent = req.headers['user-agent'] || '';
     row.client_ip_address = clientIp;
     row.client_user_agent = clientUserAgent;
-    // Also, store the order complete URL from the payload
+
+    // Store the orderCompleteUrl from the payload
     row.orderCompleteUrl = orderCompleteUrl;
 
     // Send event to Facebook
@@ -283,15 +292,15 @@ app.post('/api/fb-conversion', async (req, res) => {
     // Mark the donation as conversion sent
     await dbRun(`UPDATE donations SET fb_conversion_sent = 1 WHERE id = ?`, [row.id]);
 
-    return res.json({ message: "Conversion sent to Facebook successfully." });
+    return res.json({ message: 'Conversion sent to Facebook successfully.' });
   } catch (err) {
-    console.error("Error in /api/fb-conversion:", err);
-    return res.status(500).json({ error: "Internal error sending FB conversion." });
+    console.error('Error in /api/fb-conversion:', err);
+    return res.status(500).json({ error: 'Internal error sending FB conversion.' });
   }
 });
 
 // ------------------------------------------------------
-// CREATE-PAYMENT-INTENT (Stripe) - unchanged
+// CREATE-PAYMENT-INTENT (Stripe)
 // ------------------------------------------------------
 app.post('/create-payment-intent', async (req, res, next) => {
   try {
@@ -302,7 +311,7 @@ app.post('/create-payment-intent', async (req, res, next) => {
       lastName,
       cardName,
       country,
-      postalCode
+      postalCode,
     } = req.body;
 
     if (!donationAmount || !email) {
@@ -341,7 +350,7 @@ app.post('/create-payment-intent', async (req, res, next) => {
         country || null,
         postalCode || null,
         paymentIntent.id,
-        'pending'
+        'pending',
       ]
     );
 
@@ -382,10 +391,15 @@ app.post('/admin-api/register', async (req, res, next) => {
     const row = await dbGet(`SELECT COUNT(*) as count FROM admin_users`);
     const isFirstUser = row.count === 0;
     if (!isFirstUser && !(req.session && req.session.user)) {
-      return res.status(401).json({ error: 'Unauthorized. Please log in as admin to add new users.' });
+      return res.status(401).json({
+        error: 'Unauthorized. Please log in as admin to add new users.',
+      });
     }
     const hash = await bcrypt.hash(password, 10);
-    await dbRun(`INSERT INTO admin_users (username, password) VALUES (?, ?)`, [username, hash]);
+    await dbRun(`INSERT INTO admin_users (username, password) VALUES (?, ?)`, [
+      username,
+      hash,
+    ]);
     res.json({ message: 'Admin user registered successfully.' });
   } catch (err) {
     console.error('Error in /admin-api/register:', err);
@@ -432,7 +446,9 @@ app.get('/admin-api/donations', isAuthenticated, async (req, res, next) => {
     for (let donation of donations) {
       if (donation.payment_intent_status === 'pending') {
         try {
-          const paymentIntent = await stripeInstance.paymentIntents.retrieve(donation.payment_intent_id);
+          const paymentIntent = await stripeInstance.paymentIntents.retrieve(
+            donation.payment_intent_id
+          );
           if (paymentIntent.status !== donation.payment_intent_status) {
             await dbRun(
               `UPDATE donations SET payment_intent_status = ? WHERE id = ?`,
@@ -441,7 +457,10 @@ app.get('/admin-api/donations', isAuthenticated, async (req, res, next) => {
             donation.payment_intent_status = paymentIntent.status;
           }
         } catch (err) {
-          console.error(`Error fetching PaymentIntent for donation id ${donation.id}:`, err);
+          console.error(
+            `Error fetching PaymentIntent for donation id ${donation.id}:`,
+            err
+          );
         }
       }
     }
@@ -459,7 +478,10 @@ app.post('/admin-api/users', isAuthenticated, async (req, res, next) => {
       return res.status(400).json({ error: 'Username and password are required.' });
     }
     const hash = await bcrypt.hash(password, 10);
-    await dbRun(`INSERT INTO admin_users (username, password) VALUES (?, ?)`, [username, hash]);
+    await dbRun(`INSERT INTO admin_users (username, password) VALUES (?, ?)`, [
+      username,
+      hash,
+    ]);
     res.json({ message: 'New admin user added successfully.' });
   } catch (err) {
     console.error('Error in /admin-api/users:', err);
@@ -467,19 +489,30 @@ app.post('/admin-api/users', isAuthenticated, async (req, res, next) => {
   }
 });
 
-// Error handling
+// ------------------------------------------------------
+// ERROR HANDLING MIDDLEWARE
+// ------------------------------------------------------
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
+  console.error('Unhandled error in middleware:', err);
   res.status(500).json({ error: 'An internal server error occurred.' });
 });
 
+// ------------------------------------------------------
+// GLOBAL PROCESS ERROR HANDLERS
+// ------------------------------------------------------
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection:', reason);
-});
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
+  // We do NOT exit; just log and continue.
 });
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  // We do NOT exit; just log and continue.
+});
+
+// ------------------------------------------------------
+// START THE SERVER
+// ------------------------------------------------------
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
