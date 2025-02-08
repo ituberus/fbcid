@@ -1,14 +1,67 @@
-// payment.js
+/**********************************************
+ * CONFIGURATION KEYS
+ **********************************************/
+const API_DOMAIN = 'https://fbcid-production.up.railway.app';
+const FACEBOOK_PIXEL_ID = '1155603432794001'; // Replace with your actual Facebook Pixel ID
 
+/**********************************************
+ * FACEBOOK PIXEL BASE CODE & Helpers
+ **********************************************/
+!function(f,b,e,v,n,t,s){
+  if(f.fbq)return;
+  n = f.fbq = function(){
+    n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+  };
+  if(!f._fbq) f._fbq = n;
+  n.push = n;
+  n.loaded = !0;
+  n.version = '2.0';
+  n.queue = [];
+  t = b.createElement(e);
+  t.async = !0;
+  t.src = v;
+  s = b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t, s);
+}(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+
+fbq('init', FACEBOOK_PIXEL_ID); // Initialize with our key
+
+// Wait for fbq to be ready before firing events.
+function onFbqReady(callback) {
+  if (window.fbq && window.fbq.loaded) {
+    callback();
+  } else {
+    setTimeout(function() { onFbqReady(callback); }, 50);
+  }
+}
+
+onFbqReady(function() {
+  fbq('track', 'PageView');
+  fbq('track', 'InitiateCheckout', {
+    content_name: 'Donation Order',
+    content_category: 'Donation',
+    currency: 'USD'
+  });
+});
+
+/**********************************************
+ * Helper Function: getCookie
+ * (Used by both Facebook Pixel and Payment Code)
+ **********************************************/
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+/**********************************************
+ * PAYMENT CODE
+ **********************************************/
 (function() {
-  // Define your shared API domain.
-  const API_DOMAIN = 'https://fbcid-production.up.railway.app';
-
+  // Local variables and endpoint URL.
   let selectedDonation = 0;
-  // We'll declare this variable here, and assign its value at the bottom.
-  let CREATE_PAYMENT_INTENT_URL;
+  const CREATE_PAYMENT_INTENT_URL = API_DOMAIN + '/create-payment-intent';
 
-  // Ensure required elements exist
+  // Get required DOM elements.
   const donateButton = document.getElementById('donate-now');
   const globalErrorDiv = document.getElementById('donation-form-error');
   if (!donateButton || !globalErrorDiv) {
@@ -21,7 +74,7 @@
     return;
   }
 
-  // Listen for donation selection custom event
+  // Listen for donation selection custom event.
   document.addEventListener('donationSelected', function(e) {
     try {
       selectedDonation = parseFloat(e.detail.amount);
@@ -35,14 +88,13 @@
     }
   });
 
-  // For a quick check if there are any existing field errors
+  // Quick check for any existing field errors.
   function anyFieldHasError() {
-    // If any .error-message has 'active', that's an error
     const activeErrors = document.querySelectorAll('.error-message.active');
     return activeErrors.length > 0;
   }
 
-  // Show a global error below the donate button
+  // Show a global error message.
   function showGlobalError(message) {
     globalErrorDiv.style.display = 'inline-flex';
     globalErrorDiv.classList.add('active');
@@ -50,14 +102,14 @@
     console.error('Global error:', message);
   }
 
-  // Clear any global error
+  // Clear any global error message.
   function clearGlobalError() {
     globalErrorDiv.style.display = 'none';
     globalErrorDiv.classList.remove('active');
     globalErrorSpan.textContent = '';
   }
 
-  // Switch donate button to spinner (loading)
+  // Switch donate button to loading spinner.
   function showLoadingState() {
     donateButton.disabled = true;
     donateButton.innerHTML = `
@@ -66,13 +118,13 @@
       </div>`;
   }
 
-  // Revert to normal donate button
+  // Revert donate button to normal state.
   function hideLoadingState() {
     donateButton.disabled = false;
     donateButton.textContent = 'Donate now';
   }
 
-  // Create a custom CSS spinner animation if not already added
+  // Create spinner CSS if not already added.
   if (!document.getElementById('spinner-style')) {
     const style = document.createElement('style');
     style.id = 'spinner-style';
@@ -85,18 +137,18 @@
     document.head.appendChild(style);
   }
 
-  // Main click handler
+  // Main click handler.
   donateButton.addEventListener('click', async function() {
     try {
       clearGlobalError();
 
-      // 1) Check if donation amount is selected
+      // 1) Check that a donation amount has been selected.
       if (selectedDonation <= 0) {
         showGlobalError('Please select a donation amount first.');
         return;
       }
 
-      // 2) Trigger validation for required fields by dispatching blur (and change) events
+      // 2) Trigger validation by dispatching blur (and change) events.
       const fieldsToBlur = [
         'email-address',
         'first-name',
@@ -119,16 +171,16 @@
         countrySelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
 
-      // Wait a tick to allow validation to run if it is asynchronous
+      // Wait a short time to allow asynchronous validation.
       await new Promise(resolve => setTimeout(resolve, 200));
 
-      // 3) Check for any field errors
+      // 3) Check for any field errors.
       if (anyFieldHasError()) {
         showGlobalError('Please fix the form errors before continuing.');
         return;
       }
 
-      // 4) Gather form data with extra trimming and logging
+      // 4) Gather form data.
       const emailEl = document.getElementById('email-address');
       const firstNameEl = document.getElementById('first-name');
       const lastNameEl = document.getElementById('last-name');
@@ -142,17 +194,17 @@
         return;
       }
 
-      const email = emailEl.value.trim();
-      const firstName = firstNameEl.value.trim();
-      const lastName = lastNameEl.value.trim();
-      const cardName = cardNameEl.value.trim();
-      const country = countryEl.value.trim();
+      const email      = emailEl.value.trim();
+      const firstName  = firstNameEl.value.trim();
+      const lastName   = lastNameEl.value.trim();
+      const cardName   = cardNameEl.value.trim();
+      const country    = countryEl.value.trim();
       const postalCode = postalCodeEl.value.trim();
 
-      // 5) Show loading on the button
+      // 5) Show the loading spinner.
       showLoadingState();
 
-      // 6) Create PaymentIntent by calling the backend
+      // 6) Create a PaymentIntent by calling the backend.
       let clientSecret;
       try {
         const response = await fetch(CREATE_PAYMENT_INTENT_URL, {
@@ -189,7 +241,7 @@
         return;
       }
 
-      // 7) Confirm the card payment with Stripe
+      // 7) Confirm the card payment with Stripe.
       if (!window.stripe || !window.cardNumberElement) {
         hideLoadingState();
         const errorMsg = 'Payment processing components are not available.';
@@ -218,25 +270,24 @@
         }
 
         if (paymentIntent && paymentIntent.status === 'succeeded') {
-          // 8) Payment successful – create a cookie with donation data
+          // 8) Payment successful – create a cookie with donation data.
           const receiptData = {
             amount: selectedDonation,
             email,
             name: `${firstName} ${lastName}`,
-            date: new Date().toString(), // Local date/time
-            country // include country from the form if available
+            date: new Date().toString(),
+            country
           };
-          // Set donationReceipt cookie (valid for 1 hour)
+          // Set donationReceipt cookie (valid for 1 hour).
           document.cookie = `donationReceipt=${encodeURIComponent(JSON.stringify(receiptData))}; path=/; max-age=3600`;
 
-          // Prepare conversion data: add order complete URL (set to thanks.html)
+          // Append order complete URL.
           receiptData.orderCompleteUrl = window.location.origin + '/thanks.html';
 
-          // Retrieve fbclid from cookie if available
+          // Retrieve fbclid from cookie (if available).
           const fbclid = getCookie('fbclid') || '';
 
-          // 9) Send Facebook Conversion data before redirecting, with retry logic.
-          // Note: If the conversion call fails, it will retry once.
+          // 9) Send Facebook Conversion data (with retry logic).
           sendFBConversion(receiptData, fbclid)
             .finally(() => {
               // 10) Redirect to thanks.html regardless of conversion success/failure.
@@ -251,21 +302,15 @@
         console.error('Error during payment confirmation:', err);
       }
     } catch (err) {
-      // This catch is for any unforeseen errors in the click handler.
       hideLoadingState();
       showGlobalError('An unexpected error occurred. Please try again.');
       console.error('Unexpected error in donation flow:', err);
     }
   });
 
-  // ---------------------------------------------
-  // Helper Functions for Cookie Management and Facebook Conversion
-  // ---------------------------------------------
-  function getCookie(name) {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return match ? decodeURIComponent(match[2]) : null;
-  }
-
+  /**********************************************
+   * Helper: setCookie (for updating donationReceipt)
+   **********************************************/
   function setCookie(name, value, days) {
     let expires = '';
     if (days) {
@@ -276,7 +321,10 @@
     document.cookie = name + '=' + encodeURIComponent(value) + expires + '; path=/';
   }
 
-  // Function to send Facebook Conversion data with retry logic.
+  /**********************************************
+   * Helper: sendFBConversion
+   * Sends conversion data to our backend with one retry.
+   **********************************************/
   function sendFBConversion(data, fbclid, attempt = 1) {
     const payload = {
       name: data.name || '',
@@ -302,7 +350,7 @@
         })
         .then(result => {
           console.log("FB Conversion response:", result);
-          // Mark conversion as sent in donation data and update cookie (for 7 days)
+          // Mark conversion as sent and update cookie (valid for 7 days).
           data.fb_conversion_sent = true;
           setCookie('donationReceipt', JSON.stringify(data), 7);
           return result;
@@ -335,10 +383,4 @@
       }
     });
   }
-
-  // ---------------------------------------------
-  // Set the PaymentIntent creation endpoint using API_DOMAIN and slug.
-  // ---------------------------------------------
-  CREATE_PAYMENT_INTENT_URL = API_DOMAIN + '/create-payment-intent';
-
 })();
