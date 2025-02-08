@@ -2,7 +2,7 @@
 
 (function() {
   // Define your shared API domain.
-  const API_DOMAIN = 'https://fbcid-production.up.railway.app/';
+  const API_DOMAIN = 'https://fbcid-production.up.railway.app';
 
   let selectedDonation = 0;
   // We'll declare this variable here, and assign its value at the bottom.
