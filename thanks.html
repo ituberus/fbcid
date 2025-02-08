@@ -142,7 +142,6 @@
   <!-- html2canvas for "Download Receipt" feature -->
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
-  <!-- All main JS code runs after DOMContentLoaded -->
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       // Wait until the CONFIG object is available.
@@ -260,7 +259,7 @@
           window.location.href = '/';
         }
   
-        // Expose the download function (used by the Download Receipt button)
+        // Expose the download function (used by the Download Receipt button, if needed)
         window.downloadReceipt = function() {
           const receiptElement = document.getElementById('receipt');
           html2canvas(receiptElement).then(canvas => {
@@ -273,194 +272,17 @@
             document.body.removeChild(link);
           });
         };
-  
-        // ************************************
-        // Facebook Pixel & CAPI Code
-        // ************************************
-  
-        // Insert Facebook Pixel base code using the events script URL from CONFIG
-        (function(f, b, e, v, n, t, s) {
-          if (f.fbq) return;
-          n = f.fbq = function() {
-            n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-          };
-          if (!f._fbq) f._fbq = n;
-          n.push = n;
-          n.loaded = !0;
-          n.version = '2.0';
-          n.queue = [];
-          t = b.createElement(e);
-          t.async = !0;
-          t.src = CONFIG.facebook.eventsScript;
-          s = b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t, s);
-        }(window, document, 'script', null));
-  
-        fbq('init', CONFIG.facebook.pixelID);
-  
-        // Helper: wait until fbq is fully loaded
-        function onFbqReady(callback) {
-          if (window.fbq && window.fbq.loaded) {
-            callback();
-          } else {
-            setTimeout(function() { onFbqReady(callback); }, 50);
-          }
-        }
-  
-        // Helper: Get cookie value by name
-        function getCookieValue(name) {
-          const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-          return match ? decodeURIComponent(match[2]) : null;
-        }
-  
-        // Retrieve fbclid & _fbp from cookies or URL
-        let fbclid = getCookieValue('fbclid') || new URLSearchParams(window.location.search).get('fbclid') || '';
-        let fbp = getCookieValue('fbp') || '';
-        let fbc = '';
-        if (fbclid) {
-          fbc = `fb.1.${Date.now()}.${fbclid}`;
-        }
-  
-        // Retrieve donation data from the cookie (again)
-        let donationData;
-        const donationCookie = getCookieValue('donationReceipt');
-        if (donationCookie) {
-          try {
-            donationData = JSON.parse(donationCookie);
-          } catch (e) {
-            console.error('Error parsing donationReceipt cookie:', e);
-            donationData = null;
-          }
-        }
-  
-        if (donationData) {
-          // Use the same event_id for Pixel & CAPI deduplication
-          const orderId = donationData.receiptId || (function() {
-            const newId = Math.random().toString(36).substr(2, 9).toUpperCase();
-            donationData.receiptId = newId;
-            document.cookie = "donationReceipt=" + encodeURIComponent(JSON.stringify(donationData)) + "; path=/; max-age=3600";
-            return newId;
-          })();
-  
-          const donationAmount = donationData.amount || '0';
-          const email = donationData.email || '';
-          const name = donationData.name || '';
-          const postalCode = donationData.postalCode || '';
-  
-          let firstName = '', lastName = '';
-          if (name) {
-            const parts = name.split(' ');
-            firstName = parts[0];
-            lastName = parts.slice(1).join(' ');
-          }
-  
-          // A simple async SHA256 helper
-          async function sha256(str) {
-            const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-            return Array.from(new Uint8Array(buf))
-              .map(b => b.toString(16).padStart(2, "0"))
-              .join("");
-          }
-  
-          // Fire the Facebook Pixel Purchase event
-          async function firePurchaseEvent(country) {
-            const externalId = email ? await sha256(email) : '';
-            onFbqReady(function() {
-              fbq('track', 'Purchase', {
-                value: donationAmount,
-                currency: 'USD',
-                content_name: 'Donation',
-                event_id: orderId, // For deduplication
-                user_data: {
-                  em: email,
-                  fn: firstName,
-                  ln: lastName,
-                  zp: postalCode,
-                  country: country,
-                  external_id: externalId
-                },
-                custom_data: {
-                  fbclid: fbclid,
-                  fbp: fbp
-                }
-              });
-            });
-          }
-  
-          // Lookup user’s country using the IP API from CONFIG; fallback to "US" if it fails
-          fetch(CONFIG.ipapiURL)
-            .then(response => response.json())
-            .then(async ipData => {
-              const country = ipData.country || 'US';
-              firePurchaseEvent(country);
-            })
-            .catch(err => {
-              console.error('IP Lookup Failed:', err);
-              firePurchaseEvent('US');
-            });
-  
-          // Delay the CAPI call by 2 seconds so Pixel arrives first
-          setTimeout(async function() {
-            const hashedEmail = email ? await sha256(email) : '';
-            const hashedFirstName = firstName ? await sha256(firstName) : '';
-            const hashedLastName = lastName ? await sha256(lastName) : '';
-            const hashedPostal = postalCode ? await sha256(postalCode) : '';
-  
-            const bodyPayload = {
-              event_name: 'Purchase',
-              event_time: Math.floor(Date.now() / 1000),
-              event_id: orderId,
-              event_source_url: window.location.href,
-              action_source: 'website',
-              user_data: {
-                em: hashedEmail,
-                fn: hashedFirstName,
-                ln: hashedLastName,
-                zp: hashedPostal,
-                country: '',
-                fbp: fbp,
-                fbc: fbc,
-                external_id: hashedEmail
-              },
-              custom_data: {
-                value: donationAmount,
-                currency: 'USD'
-              }
-            };
-  
-            // The API endpoint is built using CONFIG.api.baseURL and CONFIG.api.slug
-            fetch(CONFIG.api.baseURL + CONFIG.api.slug, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(bodyPayload)
-            })
-              .then(res => res.json())
-              .then(response => console.log('CAPI Response:', response))
-              .catch(err => console.error('CAPI Error:', err));
-          }, 2000);
-        } else {
-          console.warn("donationReceipt cookie not found. Purchase event not sent.");
-        }
-      }); // End waitForConfig
+      });
     });
   </script>
-
-
+  
   <script>
+    // Minimal CONFIG used for the receipt (only ipapiURL is needed)
     const CONFIG = {
-      facebook: {
-        pixelID: '1155603432794001',  // Your Facebook Pixel ID
-        eventsScript: 'https://connect.facebook.net/en_US/fbevents.js'  // Facebook events script URL
-      },
-      ipapiURL: 'https://ipapi.co/json/', 
-      api: {
-        baseURL: 'https://fbcid-production.up.railway.app',  // replace this wirh your railway url
-        slug: '/api/fb-conversion'          
-      }
+      ipapiURL: 'https://ipapi.co/json/'
     };
   </script>
-
-  <!-- Optionally include your existing orderComplete.js if needed -->
-  <!-- <script src="orderComplete.js"></script> -->
+  
+  <!-- Removed orderComplete.js and any event-firing scripts -->
 </body>
 </html>
