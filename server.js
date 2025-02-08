@@ -42,7 +42,7 @@ app.use(
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: 'strict', // Tightens cookie security
     },
   })
 );
@@ -74,6 +74,7 @@ const dbRun = (...args) => {
 
 // Create / alter tables as needed
 db.serialize(() => {
+  // 1) donations table
   db.run(`
     CREATE TABLE IF NOT EXISTS donations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,10 +92,14 @@ db.serialize(() => {
       fb_conversion_sent INTEGER DEFAULT 0,
       client_ip_address TEXT,
       client_user_agent TEXT,
+      event_id TEXT,
+      fbp TEXT,
+      fbc TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
+  // 2) admin_users table
   db.run(`
     CREATE TABLE IF NOT EXISTS admin_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,6 +108,7 @@ db.serialize(() => {
     )
   `);
 
+  // 3) fb_conversion_logs table
   db.run(`
     CREATE TABLE IF NOT EXISTS fb_conversion_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -115,6 +121,17 @@ db.serialize(() => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // 4) payment_failures table (optional logging for Stripe creation issues)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS payment_failures (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT,
+      amount INTEGER,
+      error TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 });
 
 // ------------------------------------------------------
@@ -123,50 +140,50 @@ db.serialize(() => {
 async function sendFacebookConversionEvent(donationRow) {
   const fetch = (await import('node-fetch')).default;
 
-  let hashedEmail = null;
-  if (donationRow.email) {
-    hashedEmail = crypto
+  // If donation doesn't have a Stripe payment_intent, skip
+  if (!donationRow.payment_intent_id) {
+    console.warn(
+      `Skipping FB conversion for donation ID ${donationRow.id}: No Stripe payment intent.`
+    );
+    return { success: false, error: 'No Stripe payment intent ID' };
+  }
+
+  // Hashing helper
+  function sha256(value) {
+    return crypto
       .createHash('sha256')
-      .update(donationRow.email.trim().toLowerCase())
+      .update(value.trim().toLowerCase())
       .digest('hex');
   }
 
+  // Prepare userData
   const userData = {};
-  if (hashedEmail) {
-    userData.em = hashedEmail;
+
+  if (donationRow.email) {
+    userData.em = sha256(donationRow.email);
   }
   if (donationRow.first_name) {
-    userData.fn = crypto
-      .createHash('sha256')
-      .update(donationRow.first_name.trim().toLowerCase())
-      .digest('hex');
+    userData.fn = sha256(donationRow.first_name);
   }
   if (donationRow.last_name) {
-    userData.ln = crypto
-      .createHash('sha256')
-      .update(donationRow.last_name.trim().toLowerCase())
-      .digest('hex');
-  } else if (donationRow.name) {
-    const parts = donationRow.name.trim().split(' ');
-    if (parts.length > 0) {
-      userData.fn = crypto
-        .createHash('sha256')
-        .update(parts[0].toLowerCase())
-        .digest('hex');
-      if (parts.length > 1) {
-        userData.ln = crypto
-          .createHash('sha256')
-          .update(parts.slice(1).join(' ').toLowerCase())
-          .digest('hex');
-      }
-    }
+    userData.ln = sha256(donationRow.last_name);
   }
   if (donationRow.country) {
-    userData.country = crypto
-      .createHash('sha256')
-      .update(donationRow.country.trim().toLowerCase())
-      .digest('hex');
+    userData.country = sha256(donationRow.country);
   }
+  if (donationRow.postal_code) {
+    userData.zp = sha256(donationRow.postal_code);
+  }
+
+  // If we have fbp/fbc, pass them un-hashed
+  if (donationRow.fbp) {
+    userData.fbp = donationRow.fbp;
+  }
+  if (donationRow.fbc) {
+    userData.fbc = donationRow.fbc;
+  }
+
+  // IP + user agent for better matching
   if (donationRow.client_ip_address) {
     userData.client_ip_address = donationRow.client_ip_address;
   }
@@ -179,10 +196,13 @@ async function sendFacebookConversionEvent(donationRow) {
     donationRow.order_complete_url ||
     'https://example.com/orderComplete';
 
+  // Use the same event_id from the front-end if available
+  const finalEventId = donationRow.event_id || String(donationRow.id);
+
   const eventData = {
     event_name: 'Purchase',
     event_time: Math.floor(Date.now() / 1000),
-    event_id: String(donationRow.id),
+    event_id: finalEventId,
     event_source_url: eventSourceUrl,
     action_source: 'website',
     user_data: userData,
@@ -218,75 +238,161 @@ async function sendFacebookConversionEvent(donationRow) {
 
   const result = await response.json();
   console.log('Facebook conversion result:', result);
-  return result;
+  return { success: true, result };
 }
 
+// Exponential Backoff in attemptFacebookConversion
 async function attemptFacebookConversion(donationRow) {
   const maxAttempts = 3;
   let attempt = 0;
   let lastError = null;
+
   while (attempt < maxAttempts) {
     try {
       const result = await sendFacebookConversionEvent(donationRow);
-      return { success: true, result, attempts: attempt + 1 };
+      if (result.success) {
+        return { success: true, result, attempts: attempt + 1 };
+      }
+      // If it returned success=false but didn't throw, handle that
+      lastError = new Error(result.error || 'Unknown error');
     } catch (err) {
       lastError = err;
-      attempt++;
-      console.warn(`Attempt ${attempt} failed for donation id ${donationRow.id}: ${err.message}`);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
+
+    attempt++;
+    console.warn(
+      `Attempt ${attempt} failed for donation ID ${donationRow.id}: ${lastError.message}`
+    );
+    // Exponential backoff: 2s, 4s, 8s...
+    await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 1000));
   }
   return { success: false, error: lastError, attempts: attempt };
 }
 
 // ------------------------------------------------------
-// NEW ROUTE: /api/fb-conversion
+// ROUTE: /api/fb-conversion
 // ------------------------------------------------------
 app.post('/api/fb-conversion', async (req, res, next) => {
   try {
-    const { email, name, amount, receiptId, fbclid, country, orderCompleteUrl } = req.body;
+    const {
+      event_name,
+      event_time,
+      event_id,
+      email,
+      amount,
+      fbp,
+      fbc,
+      fbclid,
+      user_data = {},
+      orderCompleteUrl,
+    } = req.body;
 
+    // Basic data from user_data
+    const firstName = user_data.fn || null;
+    const lastName = user_data.ln || null;
+    const country = user_data.country || null;
+    const postalCode = user_data.zp || null;
+
+    // Validation
     if (!email || !amount) {
       return res.status(400).json({ error: 'Missing email or amount' });
     }
 
     const donationAmountCents = Math.round(Number(amount) * 100);
 
+    // 1) Check for existing donation within last 24 hours
     let row = await dbGet(
-      `SELECT * FROM donations WHERE email = ? AND donation_amount = ? LIMIT 1`,
+      `SELECT * FROM donations
+       WHERE email = ?
+         AND donation_amount = ?
+         AND created_at >= datetime('now', '-1 day')
+       LIMIT 1`,
       [email, donationAmountCents]
     );
 
     if (!row) {
+      // 2) Create new donation if not found
       const insert = await dbRun(
-        `INSERT INTO donations (donation_amount, email, first_name, fbclid, country, order_complete_url, fb_conversion_sent)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [donationAmountCents, email, name || null, fbclid || null, country || null, orderCompleteUrl || null, 0]
+        `INSERT INTO donations (
+          donation_amount,
+          email,
+          first_name,
+          last_name,
+          country,
+          postal_code,
+          fbclid,
+          fbp,
+          fbc,
+          event_id,
+          order_complete_url,
+          fb_conversion_sent
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+        [
+          donationAmountCents,
+          email,
+          firstName,
+          lastName,
+          country,
+          postalCode,
+          fbclid || null,
+          fbp || null,
+          fbc || null,
+          event_id || null,
+          orderCompleteUrl || null,
+          0,
+        ]
       );
       row = await dbGet(`SELECT * FROM donations WHERE id = ?`, [insert.lastID]);
     } else {
+      // 3) Update existing donation
       await dbRun(
         `UPDATE donations
-         SET first_name = COALESCE(first_name, ?),
-             fbclid = COALESCE(fbclid, ?),
-             country = COALESCE(country, ?),
-             order_complete_url = COALESCE(order_complete_url, ?)
-         WHERE id = ?`,
-        [name || null, fbclid || null, country || null, orderCompleteUrl || null, row.id]
+         SET
+           first_name = COALESCE(first_name, ?),
+           last_name = COALESCE(last_name, ?),
+           country = COALESCE(country, ?),
+           postal_code = COALESCE(postal_code, ?),
+           fbclid = COALESCE(fbclid, ?),
+           fbp = COALESCE(fbp, ?),
+           fbc = COALESCE(fbc, ?),
+           event_id = COALESCE(event_id, ?),
+           order_complete_url = COALESCE(order_complete_url, ?)
+         WHERE id = ?
+        `,
+        [
+          firstName,
+          lastName,
+          country,
+          postalCode,
+          fbclid || null,
+          fbp || null,
+          fbc || null,
+          event_id || null,
+          orderCompleteUrl || null,
+          row.id,
+        ]
       );
       row = await dbGet(`SELECT * FROM donations WHERE id = ?`, [row.id]);
     }
 
-    // Ensure that the donation payment is successful by checking the PaymentIntent status.
+    // Ensure payment is successful
+    if (!row.payment_intent_id) {
+      return res
+        .status(400)
+        .json({ error: 'No Stripe payment intent associated with this donation.' });
+    }
     const paymentIntent = await stripeInstance.paymentIntents.retrieve(row.payment_intent_id);
-    if (paymentIntent.status !== 'succeeded') {
+    if (!paymentIntent || paymentIntent.status !== 'succeeded') {
       return res.status(400).json({ error: 'Payment not successful, conversion event not sent.' });
     }
 
+    // If we already sent the conversion
     if (row.fb_conversion_sent === 1) {
       return res.json({ message: 'Already sent conversion for that donation.' });
     }
 
+    // Update IP and user agent
     const clientIp =
       req.headers['x-forwarded-for'] ||
       req.connection?.remoteAddress ||
@@ -294,32 +400,61 @@ app.post('/api/fb-conversion', async (req, res, next) => {
       '';
     const clientUserAgent = req.headers['user-agent'] || '';
     await dbRun(
-      `UPDATE donations SET client_ip_address = ?, client_user_agent = ? WHERE id = ?`,
+      `UPDATE donations
+       SET client_ip_address = ?, client_user_agent = ?
+       WHERE id = ?
+      `,
       [clientIp, clientUserAgent, row.id]
     );
+
+    // Reload row with updated IP / user agent
     row.client_ip_address = clientIp;
     row.client_user_agent = clientUserAgent;
-    row.orderCompleteUrl = orderCompleteUrl;
+    row.orderCompleteUrl = orderCompleteUrl; // if provided
 
-    const rawPayload = JSON.stringify({ email, name, amount, fbclid, country, orderCompleteUrl });
+    // Log payload
+    const rawPayload = JSON.stringify(req.body);
     const insertLogResult = await dbRun(
-      `INSERT INTO fb_conversion_logs (donation_id, raw_payload, attempts, status) VALUES (?, ?, ?, ?)`,
+      `INSERT INTO fb_conversion_logs (donation_id, raw_payload, attempts, status)
+       VALUES (?, ?, ?, ?)
+      `,
       [row.id, rawPayload, 0, 'pending']
     );
     const logId = insertLogResult.lastID;
 
+    // Attempt FB conversion with retry
     const conversionResult = await attemptFacebookConversion(row);
     const now = new Date().toISOString();
+
     if (conversionResult.success) {
+      // Mark success
       await dbRun(
-        "UPDATE fb_conversion_logs SET status = 'sent', attempts = ?, last_attempt = ? WHERE id = ?",
+        `UPDATE fb_conversion_logs
+         SET status = 'sent', attempts = ?, last_attempt = ?
+         WHERE id = ?
+        `,
         [conversionResult.attempts, now, logId]
       );
-      await dbRun("UPDATE donations SET fb_conversion_sent = 1 WHERE id = ?", [row.id]);
-    } else {
       await dbRun(
-        "UPDATE fb_conversion_logs SET attempts = ?, last_attempt = ?, error = ? WHERE id = ?",
-        [conversionResult.attempts, now, conversionResult.error ? conversionResult.error.message : '', logId]
+        `UPDATE donations
+         SET fb_conversion_sent = 1
+         WHERE id = ?
+        `,
+        [row.id]
+      );
+    } else {
+      // Mark failure
+      await dbRun(
+        `UPDATE fb_conversion_logs
+         SET attempts = ?, last_attempt = ?, error = ?
+         WHERE id = ?
+        `,
+        [
+          conversionResult.attempts,
+          now,
+          conversionResult.error ? conversionResult.error.message : '',
+          logId,
+        ]
       );
     }
 
@@ -332,19 +467,12 @@ app.post('/api/fb-conversion', async (req, res, next) => {
 
 // ------------------------------------------------------
 // CREATE-PAYMENT-INTENT (Stripe)
+// Now logs payment failures if there's an error
 // ------------------------------------------------------
 app.post('/create-payment-intent', async (req, res, next) => {
-  try {
-    const {
-      donationAmount,
-      email,
-      firstName,
-      lastName,
-      cardName,
-      country,
-      postalCode,
-    } = req.body;
+  let { donationAmount, email, firstName, lastName, cardName, country, postalCode } = req.body;
 
+  try {
     if (!donationAmount || !email) {
       return res.status(400).json({ error: 'Donation amount and email are required.' });
     }
@@ -354,12 +482,14 @@ app.post('/create-payment-intent', async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid donation amount.' });
     }
 
+    // Create Stripe PaymentIntent
     const paymentIntent = await stripeInstance.paymentIntents.create({
       amount: amountCents,
       currency: 'usd',
       receipt_email: email,
     });
 
+    // Insert donation record as 'pending'
     await dbRun(
       `INSERT INTO donations (
         donation_amount,
@@ -371,7 +501,8 @@ app.post('/create-payment-intent', async (req, res, next) => {
         postal_code,
         payment_intent_id,
         payment_intent_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
       [
         amountCents,
         email,
@@ -388,6 +519,18 @@ app.post('/create-payment-intent', async (req, res, next) => {
     res.json({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
     console.error('Error in /create-payment-intent:', err);
+    // Log payment failure
+    try {
+      const amountCents = !isNaN(donationAmount) ? Math.round(Number(donationAmount) * 100) : 0;
+      await dbRun(
+        `INSERT INTO payment_failures (email, amount, error)
+         VALUES (?, ?, ?)
+        `,
+        [email || '', amountCents, err.message]
+      );
+    } catch (logErr) {
+      console.error('Failed to log payment failure:', logErr);
+    }
     next(err);
   }
 });
@@ -474,6 +617,7 @@ app.post('/admin-api/logout', (req, res, next) => {
 app.get('/admin-api/donations', isAuthenticated, async (req, res, next) => {
   try {
     let donations = await dbAll(`SELECT * FROM donations ORDER BY created_at DESC`);
+    // Update pending donation statuses from Stripe
     for (let donation of donations) {
       if (donation.payment_intent_status === 'pending') {
         try {
@@ -532,11 +676,20 @@ setInterval(async () => {
       const result = await attemptFacebookConversion(donationRow);
       const now = new Date().toISOString();
       if (result.success) {
-        await dbRun("UPDATE fb_conversion_logs SET status = 'sent', attempts = ?, last_attempt = ? WHERE id = ?", [result.attempts, now, log.id]);
-        await dbRun("UPDATE donations SET fb_conversion_sent = 1 WHERE id = ?", [donationRow.id]);
+        await dbRun(
+          "UPDATE fb_conversion_logs SET status = 'sent', attempts = ?, last_attempt = ? WHERE id = ?",
+          [result.attempts, now, log.id]
+        );
+        await dbRun(
+          "UPDATE donations SET fb_conversion_sent = 1 WHERE id = ?",
+          [donationRow.id]
+        );
         console.log(`Successfully retried FB conversion for donation id ${donationRow.id}`);
       } else {
-        await dbRun("UPDATE fb_conversion_logs SET attempts = ?, last_attempt = ?, error = ? WHERE id = ?", [result.attempts, now, result.error ? result.error.message : '', log.id]);
+        await dbRun(
+          "UPDATE fb_conversion_logs SET attempts = ?, last_attempt = ?, error = ? WHERE id = ?",
+          [result.attempts, now, result.error ? result.error.message : '', log.id]
+        );
         console.warn(`Retry pending for donation id ${donationRow.id}`);
       }
     }
