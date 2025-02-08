@@ -10,6 +10,7 @@ const morgan = require('morgan');
 const { promisify } = require('util');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const cookieParser = require('cookie-parser'); // <-- Added to parse cookies
 require('dotenv').config();
 const crypto = require('crypto');
 
@@ -32,6 +33,7 @@ app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // <-- Added cookie-parser middleware
 
 app.use(
   session({
@@ -75,8 +77,8 @@ const dbRun = (...args) => {
 // Create / alter tables as needed
 db.serialize(() => {
   // 1) donations table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS donations (
+  db.run(
+    `CREATE TABLE IF NOT EXISTS donations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       donation_amount INTEGER,
       email TEXT,
@@ -96,21 +98,21 @@ db.serialize(() => {
       fbp TEXT,
       fbc TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+    )`
+  );
 
   // 2) admin_users table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS admin_users (
+  db.run(
+    `CREATE TABLE IF NOT EXISTS admin_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE,
       password TEXT
-    )
-  `);
+    )`
+  );
 
   // 3) fb_conversion_logs table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS fb_conversion_logs (
+  db.run(
+    `CREATE TABLE IF NOT EXISTS fb_conversion_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       donation_id INTEGER,
       raw_payload TEXT,
@@ -119,19 +121,19 @@ db.serialize(() => {
       status TEXT DEFAULT 'pending',
       error TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+    )`
+  );
 
   // 4) payment_failures table (optional logging for Stripe creation issues)
-  db.run(`
-    CREATE TABLE IF NOT EXISTS payment_failures (
+  db.run(
+    `CREATE TABLE IF NOT EXISTS payment_failures (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT,
       amount INTEGER,
       error TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+    )`
+  );
 });
 
 // ------------------------------------------------------
@@ -282,10 +284,12 @@ app.post('/api/fb-conversion', async (req, res, next) => {
       amount,
       fbp,
       fbc,
-      fbclid,
       user_data = {},
       orderCompleteUrl,
     } = req.body;
+    // Improved fbclid handling: check req.body then fallback to cookies if not provided
+    const fbclid = req.body.fbclid || req.cookies.fbclid || null;
+
 
     // Basic data from user_data
     const firstName = user_data.fn || null;
@@ -326,8 +330,7 @@ app.post('/api/fb-conversion', async (req, res, next) => {
           event_id,
           order_complete_url,
           fb_conversion_sent
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           donationAmountCents,
           email,
@@ -358,8 +361,7 @@ app.post('/api/fb-conversion', async (req, res, next) => {
            fbc = COALESCE(fbc, ?),
            event_id = COALESCE(event_id, ?),
            order_complete_url = COALESCE(order_complete_url, ?)
-         WHERE id = ?
-        `,
+         WHERE id = ?`,
         [
           firstName,
           lastName,
@@ -402,8 +404,7 @@ app.post('/api/fb-conversion', async (req, res, next) => {
     await dbRun(
       `UPDATE donations
        SET client_ip_address = ?, client_user_agent = ?
-       WHERE id = ?
-      `,
+       WHERE id = ?`,
       [clientIp, clientUserAgent, row.id]
     );
 
@@ -416,8 +417,7 @@ app.post('/api/fb-conversion', async (req, res, next) => {
     const rawPayload = JSON.stringify(req.body);
     const insertLogResult = await dbRun(
       `INSERT INTO fb_conversion_logs (donation_id, raw_payload, attempts, status)
-       VALUES (?, ?, ?, ?)
-      `,
+       VALUES (?, ?, ?, ?)`,
       [row.id, rawPayload, 0, 'pending']
     );
     const logId = insertLogResult.lastID;
@@ -431,15 +431,13 @@ app.post('/api/fb-conversion', async (req, res, next) => {
       await dbRun(
         `UPDATE fb_conversion_logs
          SET status = 'sent', attempts = ?, last_attempt = ?
-         WHERE id = ?
-        `,
+         WHERE id = ?`,
         [conversionResult.attempts, now, logId]
       );
       await dbRun(
         `UPDATE donations
          SET fb_conversion_sent = 1
-         WHERE id = ?
-        `,
+         WHERE id = ?`,
         [row.id]
       );
     } else {
@@ -447,8 +445,7 @@ app.post('/api/fb-conversion', async (req, res, next) => {
       await dbRun(
         `UPDATE fb_conversion_logs
          SET attempts = ?, last_attempt = ?, error = ?
-         WHERE id = ?
-        `,
+         WHERE id = ?`,
         [
           conversionResult.attempts,
           now,
@@ -501,8 +498,7 @@ app.post('/create-payment-intent', async (req, res, next) => {
         postal_code,
         payment_intent_id,
         payment_intent_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         amountCents,
         email,
@@ -524,8 +520,7 @@ app.post('/create-payment-intent', async (req, res, next) => {
       const amountCents = !isNaN(donationAmount) ? Math.round(Number(donationAmount) * 100) : 0;
       await dbRun(
         `INSERT INTO payment_failures (email, amount, error)
-         VALUES (?, ?, ?)
-        `,
+         VALUES (?, ?, ?)`,
         [email || '', amountCents, err.message]
       );
     } catch (logErr) {
