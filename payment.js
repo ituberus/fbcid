@@ -379,7 +379,9 @@ function setCookie(name, value, days) {
               ln: lastName,
               zp: postalCode,
               country: country
-            }
+            },
+            // >>> THIS IS THE ONLY CHANGE: pass current page URL <<<
+            orderCompleteUrl: window.location.href
           };
           sendFBConversion(capiPayload);
 
