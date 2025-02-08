@@ -1,276 +1,466 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Donation Receipt</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        /* ... your existing CSS exactly as before ... */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f8f9fa;
-            min-height: 100vh;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .container {
-            width: 100%;
-            max-width: 400px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-        .success-header {
-            background: #10b981;
-            color: white;
-            padding: 24px 20px;
-            text-align: center;
-        }
-        .checkmark {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-        }
-        .checkmark svg {
-            width: 30px;
-            height: 30px;
-            color: #10b981;
-        }
-        .success-header h1 {
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-        .success-header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        .receipt {
-            padding: 20px;
-            background: white;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .receipt-header {
-            text-align: center;
-            padding-bottom: 15px;
-            border-bottom: 1px dashed #ddd;
-            margin-bottom: 15px;
-        }
-        .receipt-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .receipt-line {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        .amount-section {
-            border-top: 1px dashed #ddd;
-            border-bottom: 1px dashed #ddd;
-            margin: 15px 0;
-            padding: 15px 0;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .download-btn {
-            display: block;
-            width: calc(100% - 40px);
-            margin: 20px auto;
-            padding: 12px;
-            background: #10b981;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .download-btn:hover {
-            background: #059669;
-        }
-    </style>
+  <title>Donation Receipt</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Your existing CSS styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .success-header {
+      background: #10b981;
+      color: white;
+      padding: 24px 20px;
+      text-align: center;
+    }
+    .checkmark {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .checkmark svg {
+      width: 30px;
+      height: 30px;
+      color: #10b981;
+    }
+    .success-header h1 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    .success-header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    .receipt {
+      padding: 20px;
+      background: white;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .receipt-header {
+      text-align: center;
+      padding-bottom: 15px;
+      border-bottom: 1px dashed #ddd;
+      margin-bottom: 15px;
+    }
+    .receipt-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .receipt-line {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .amount-section {
+      border-top: 1px dashed #ddd;
+      border-bottom: 1px dashed #ddd;
+      margin: 15px 0;
+      padding: 15px 0;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .download-btn {
+      display: block;
+      width: calc(100% - 40px);
+      margin: 20px auto;
+      padding: 12px;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .download-btn:hover {
+      background: #059669;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="success-header">
-            <div class="checkmark">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </div>
-            <h1>Thank You!</h1>
-            <p>Your donation has been received</p>
-        </div>
-
-        <div class="receipt" id="receipt">
-            <div class="receipt-header">
-                <div class="receipt-title">DONATION RECEIPT</div>
-                <div id="receipt-date"></div>
-            </div>
-            <div class="receipt-line">
-                <span>Name:</span>
-                <span id="receipt-name"></span>
-            </div>
-            <div class="receipt-line">
-                <span>Email:</span>
-                <span id="receipt-email"></span>
-            </div>
-            <div class="amount-section">
-                $<span id="receipt-amount"></span>
-            </div>
-            <div style="text-align: center; font-size: 12px;">
-                Receipt #<span id="receipt-id"></span>
-            </div>
-        </div>
+  <div class="container">
+    <div class="success-header">
+      <div class="checkmark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h1>Thank You!</h1>
+      <p>Your donation has been received</p>
     </div>
 
-    <!-- You already have html2canvas below, presumably for "Download" feature -->
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <div class="receipt" id="receipt">
+      <div class="receipt-header">
+        <div class="receipt-title">DONATION RECEIPT</div>
+        <div id="receipt-date"></div>
+      </div>
+      <div class="receipt-line">
+        <span>Name:</span>
+        <span id="receipt-name"></span>
+      </div>
+      <div class="receipt-line">
+        <span>Email:</span>
+        <span id="receipt-email"></span>
+      </div>
+      <div class="amount-section">
+        $<span id="receipt-amount"></span>
+      </div>
+      <div style="text-align: center; font-size: 12px;">
+        Receipt #<span id="receipt-id"></span>
+      </div>
+    </div>
+  </div>
 
-    <!-- Your original script that populates the donation info from the cookie -->
-    <script>
-        (function() {
-            function getCookie(name) {
-                const matches = document.cookie.match(new RegExp(
-                    "(?:^|; )" +
-                    name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, "\\$1") +
-                    "=([^;]*)"
-                ));
-                return matches ? decodeURIComponent(matches[1]) : undefined;
-            }
+  <!-- html2canvas for "Download Receipt" feature -->
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
-            function setCookie(name, value, days) {
-                let expires = "";
-                if (days) {
-                    const date = new Date();
-                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                    expires = "; expires=" + date.toUTCString();
-                }
-                document.cookie = name + "=" + (value || "") + expires + "; path=/";
-            }
-
-            function generateReceiptId() {
-                return Math.random().toString(36).substr(2, 9).toUpperCase();
-            }
-
-            function updateReceiptDate(data) {
-                fetch('https://ipapi.co/json/')
-                    .then(response => response.json())
-                    .then(ipData => {
-                        const userTimezone = ipData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-                        const now = new Date();
-                        data.receiptDate = now.toISOString();
-                        data.userTimezone = userTimezone;
-                        setCookie('donationReceipt', JSON.stringify(data), 7);
-
-                        const options = {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            timeZone: userTimezone,
-                            timeZoneName: 'short'
-                        };
-                        document.getElementById('receipt-date').textContent =
-                            new Intl.DateTimeFormat(undefined, options).format(now);
-                    })
-                    .catch(() => {
-                        const now = new Date();
-                        data.receiptDate = now.toISOString();
-                        data.userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                        setCookie('donationReceipt', JSON.stringify(data), 7);
-                        const options = {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            timeZoneName: 'short'
-                        };
-                        document.getElementById('receipt-date').textContent =
-                            new Intl.DateTimeFormat(undefined, options).format(now);
-                    });
-            }
-
-            const receiptCookie = getCookie('donationReceipt');
-            if (receiptCookie) {
-                try {
-                    let data = JSON.parse(receiptCookie);
-
-                    if (!data.receiptDate) {
-                        updateReceiptDate(data);
-                    } else {
-                        const receiptDate = new Date(data.receiptDate);
-                        const userTimezone = data.userTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-                        const options = {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            timeZone: userTimezone,
-                            timeZoneName: 'short'
-                        };
-                        document.getElementById('receipt-date').textContent =
-                            new Intl.DateTimeFormat(undefined, options).format(receiptDate);
-                    }
-
-                    // Display donation details
-                    document.getElementById('receipt-amount').textContent = parseFloat(data.amount).toFixed(2);
-                    document.getElementById('receipt-name').textContent = data.name;
-                    document.getElementById('receipt-email').textContent = data.email;
-
-                    if (!data.receiptId) {
-                        data.receiptId = generateReceiptId();
-                        setCookie('donationReceipt', JSON.stringify(data), 7);
-                    }
-                    document.getElementById('receipt-id').textContent = data.receiptId;
-
-                } catch (e) {
-                    console.error('Error parsing donationReceipt cookie:', e);
-                    window.location.href = '/';
-                }
-            } else {
-                // If no cookie, back to home (no donation info to display)
-                window.location.href = '/';
-            }
-        })();
-
-        // This function is for your existing "download receipt" feature
-        function downloadReceipt() {
-            const receiptElement = document.getElementById('receipt');
-            html2canvas(receiptElement).then(canvas => {
-                const dataUrl = canvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = 'donation-receipt.png';
-                link.href = dataUrl;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+  <!-- All main JS code runs after DOMContentLoaded -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Wait until the CONFIG object is available.
+      function waitForConfig(callback) {
+        if (window.CONFIG) {
+          callback();
+        } else {
+          setTimeout(() => waitForConfig(callback), 50);
+        }
+      }
+      
+      waitForConfig(function() {
+        // ************************************
+        // Receipt Population & Cookie Handling
+        // ************************************
+        function getCookie(name) {
+          const matches = document.cookie.match(new RegExp(
+            "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, "\\$1") + "=([^;]*)"
+          ));
+          return matches ? decodeURIComponent(matches[1]) : undefined;
+        }
+  
+        function setCookie(name, value, days) {
+          let expires = "";
+          if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+          }
+          document.cookie = name + "=" + encodeURIComponent(value) + expires + "; path=/";
+        }
+  
+        function generateReceiptId() {
+          return Math.random().toString(36).substr(2, 9).toUpperCase();
+        }
+  
+        // Update the receipt date using the IP API (URL taken from CONFIG)
+        function updateReceiptDate(data) {
+          fetch(CONFIG.ipapiURL)
+            .then(response => response.json())
+            .then(ipData => {
+              const userTimezone = ipData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+              const now = new Date();
+              data.receiptDate = now.toISOString();
+              data.userTimezone = userTimezone;
+              setCookie('donationReceipt', JSON.stringify(data), 7);
+              const options = {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZone: userTimezone,
+                timeZoneName: 'short'
+              };
+              document.getElementById('receipt-date').textContent =
+                new Intl.DateTimeFormat(undefined, options).format(now);
+            })
+            .catch(() => {
+              const now = new Date();
+              data.receiptDate = now.toISOString();
+              data.userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+              setCookie('donationReceipt', JSON.stringify(data), 7);
+              const options = {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZoneName: 'short'
+              };
+              document.getElementById('receipt-date').textContent =
+                new Intl.DateTimeFormat(undefined, options).format(now);
             });
         }
-    </script>
+  
+        // Read donationReceipt cookie and populate the receipt
+        const receiptCookie = getCookie('donationReceipt');
+        if (receiptCookie) {
+          try {
+            let data = JSON.parse(receiptCookie);
+            if (!data.receiptDate) {
+              updateReceiptDate(data);
+            } else {
+              const receiptDate = new Date(data.receiptDate);
+              const userTimezone = data.userTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+              const options = {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZone: userTimezone,
+                timeZoneName: 'short'
+              };
+              document.getElementById('receipt-date').textContent =
+                new Intl.DateTimeFormat(undefined, options).format(receiptDate);
+            }
+            document.getElementById('receipt-amount').textContent = parseFloat(data.amount).toFixed(2);
+            document.getElementById('receipt-name').textContent = data.name;
+            document.getElementById('receipt-email').textContent = data.email;
+            if (!data.receiptId) {
+              data.receiptId = generateReceiptId();
+              setCookie('donationReceipt', JSON.stringify(data), 7);
+            }
+            document.getElementById('receipt-id').textContent = data.receiptId;
+          } catch (e) {
+            console.error('Error parsing donationReceipt cookie:', e);
+            window.location.href = '/';
+          }
+        } else {
+          window.location.href = '/';
+        }
+  
+        // Expose the download function (used by the Download Receipt button)
+        window.downloadReceipt = function() {
+          const receiptElement = document.getElementById('receipt');
+          html2canvas(receiptElement).then(canvas => {
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'donation-receipt.png';
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          });
+        };
+  
+        // ************************************
+        // Facebook Pixel & CAPI Code
+        // ************************************
+  
+        // Insert Facebook Pixel base code using the events script URL from CONFIG
+        (function(f, b, e, v, n, t, s) {
+          if (f.fbq) return;
+          n = f.fbq = function() {
+            n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+          };
+          if (!f._fbq) f._fbq = n;
+          n.push = n;
+          n.loaded = !0;
+          n.version = '2.0';
+          n.queue = [];
+          t = b.createElement(e);
+          t.async = !0;
+          t.src = CONFIG.facebook.eventsScript;
+          s = b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t, s);
+        }(window, document, 'script', null));
+  
+        fbq('init', CONFIG.facebook.pixelID);
+  
+        // Helper: wait until fbq is fully loaded
+        function onFbqReady(callback) {
+          if (window.fbq && window.fbq.loaded) {
+            callback();
+          } else {
+            setTimeout(function() { onFbqReady(callback); }, 50);
+          }
+        }
+  
+        // Helper: Get cookie value by name
+        function getCookieValue(name) {
+          const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+          return match ? decodeURIComponent(match[2]) : null;
+        }
+  
+        // Retrieve fbclid & _fbp from cookies or URL
+        let fbclid = getCookieValue('fbclid') || new URLSearchParams(window.location.search).get('fbclid') || '';
+        let fbp = getCookieValue('fbp') || '';
+        let fbc = '';
+        if (fbclid) {
+          fbc = `fb.1.${Date.now()}.${fbclid}`;
+        }
+  
+        // Retrieve donation data from the cookie (again)
+        let donationData;
+        const donationCookie = getCookieValue('donationReceipt');
+        if (donationCookie) {
+          try {
+            donationData = JSON.parse(donationCookie);
+          } catch (e) {
+            console.error('Error parsing donationReceipt cookie:', e);
+            donationData = null;
+          }
+        }
+  
+        if (donationData) {
+          // Use the same event_id for Pixel & CAPI deduplication
+          const orderId = donationData.receiptId || (function() {
+            const newId = Math.random().toString(36).substr(2, 9).toUpperCase();
+            donationData.receiptId = newId;
+            document.cookie = "donationReceipt=" + encodeURIComponent(JSON.stringify(donationData)) + "; path=/; max-age=3600";
+            return newId;
+          })();
+  
+          const donationAmount = donationData.amount || '0';
+          const email = donationData.email || '';
+          const name = donationData.name || '';
+          const postalCode = donationData.postalCode || '';
+  
+          let firstName = '', lastName = '';
+          if (name) {
+            const parts = name.split(' ');
+            firstName = parts[0];
+            lastName = parts.slice(1).join(' ');
+          }
+  
+          // A simple async SHA256 helper
+          async function sha256(str) {
+            const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+            return Array.from(new Uint8Array(buf))
+              .map(b => b.toString(16).padStart(2, "0"))
+              .join("");
+          }
+  
+          // Fire the Facebook Pixel Purchase event
+          async function firePurchaseEvent(country) {
+            const externalId = email ? await sha256(email) : '';
+            onFbqReady(function() {
+              fbq('track', 'Purchase', {
+                value: donationAmount,
+                currency: 'USD',
+                content_name: 'Donation',
+                event_id: orderId, // For deduplication
+                user_data: {
+                  em: email,
+                  fn: firstName,
+                  ln: lastName,
+                  zp: postalCode,
+                  country: country,
+                  external_id: externalId
+                },
+                custom_data: {
+                  fbclid: fbclid,
+                  fbp: fbp
+                }
+              });
+            });
+          }
+  
+          // Lookup user’s country using the IP API from CONFIG; fallback to "US" if it fails
+          fetch(CONFIG.ipapiURL)
+            .then(response => response.json())
+            .then(async ipData => {
+              const country = ipData.country || 'US';
+              firePurchaseEvent(country);
+            })
+            .catch(err => {
+              console.error('IP Lookup Failed:', err);
+              firePurchaseEvent('US');
+            });
+  
+          // Delay the CAPI call by 2 seconds so Pixel arrives first
+          setTimeout(async function() {
+            const hashedEmail = email ? await sha256(email) : '';
+            const hashedFirstName = firstName ? await sha256(firstName) : '';
+            const hashedLastName = lastName ? await sha256(lastName) : '';
+            const hashedPostal = postalCode ? await sha256(postalCode) : '';
+  
+            const bodyPayload = {
+              event_name: 'Purchase',
+              event_time: Math.floor(Date.now() / 1000),
+              event_id: orderId,
+              event_source_url: window.location.href,
+              action_source: 'website',
+              user_data: {
+                em: hashedEmail,
+                fn: hashedFirstName,
+                ln: hashedLastName,
+                zp: hashedPostal,
+                country: '',
+                fbp: fbp,
+                fbc: fbc,
+                external_id: hashedEmail
+              },
+              custom_data: {
+                value: donationAmount,
+                currency: 'USD'
+              }
+            };
+  
+            // The API endpoint is built using CONFIG.api.baseURL and CONFIG.api.slug
+            fetch(CONFIG.api.baseURL + CONFIG.api.slug, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(bodyPayload)
+            })
+              .then(res => res.json())
+              .then(response => console.log('CAPI Response:', response))
+              .catch(err => console.error('CAPI Error:', err));
+          }, 2000);
+        } else {
+          console.warn("donationReceipt cookie not found. Purchase event not sent.");
+        }
+      }); // End waitForConfig
+    });
+  </script>
 
-    <!-- NEW script to POST data to your server for FB conversion -->
-    <script src="orderComplete.js"></script>
+
+  <script>
+    const CONFIG = {
+      facebook: {
+        pixelID: '1155603432794001',  // Your Facebook Pixel ID
+        eventsScript: 'https://connect.facebook.net/en_US/fbevents.js'  // Facebook events script URL
+      },
+      ipapiURL: 'https://ipapi.co/json/', 
+      api: {
+        baseURL: 'https://fbcid-production.up.railway.app',  // replace this wirh your railway url
+        slug: '/api/fb-conversion'          
+      }
+    };
+  </script>
+
+  <!-- Optionally include your existing orderComplete.js if needed -->
+  <!-- <script src="orderComplete.js"></script> -->
 </body>
 </html>
