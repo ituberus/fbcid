@@ -36,6 +36,7 @@ function onFbqReady(callback) {
 }
 
 onFbqReady(function() {
+  // Fire basic events right away
   fbq('track', 'PageView');
   fbq('track', 'InitiateCheckout', {
     content_name: 'Donation Order',
@@ -45,12 +46,21 @@ onFbqReady(function() {
 });
 
 /**********************************************
- * Helper Function: getCookie
- * (Used by both Facebook Pixel and Payment Code)
+ * Helper Functions: getCookie, setCookie
  **********************************************/
 function getCookie(name) {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
   return match ? decodeURIComponent(match[2]) : null;
+}
+
+function setCookie(name, value, days) {
+  let expires = '';
+  if (days) {
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    expires = '; expires=' + date.toUTCString();
+  }
+  document.cookie = name + '=' + encodeURIComponent(value) + expires + '; path=/';
 }
 
 /**********************************************
@@ -61,7 +71,7 @@ function getCookie(name) {
   let selectedDonation = 0;
   const CREATE_PAYMENT_INTENT_URL = API_DOMAIN + '/create-payment-intent';
 
-  // Get required DOM elements.
+  // DOM elements
   const donateButton = document.getElementById('donate-now');
   const globalErrorDiv = document.getElementById('donation-form-error');
   if (!donateButton || !globalErrorDiv) {
@@ -112,10 +122,10 @@ function getCookie(name) {
   // Switch donate button to loading spinner.
   function showLoadingState() {
     donateButton.disabled = true;
-    donateButton.innerHTML = `
-      <div class="loader" 
-           style="border: 3px solid #f3f3f3; border-top: 3px solid #999; border-radius: 50%; width: 1.2rem; height: 1.2rem; animation: spin 1s linear infinite;">
-      </div>`;
+    donateButton.innerHTML =
+      `<div class="loader"
+         style="border: 3px solid #f3f3f3; border-top: 3px solid #999; border-radius: 50%; width: 1.2rem; height: 1.2rem; animation: spin 1s linear infinite;">
+       </div>`;
   }
 
   // Revert donate button to normal state.
@@ -135,6 +145,31 @@ function getCookie(name) {
       }
     `;
     document.head.appendChild(style);
+  }
+
+  // Conversions API request function with retry
+  async function sendFBConversion(payload, attempt = 1) {
+    try {
+      let response = await fetch(API_DOMAIN + '/api/fb-conversion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Server responded with ${response.status}: ${text}`);
+      }
+      const jsonData = await response.json();
+      console.log('CAPI Response:', jsonData);
+
+    } catch (error) {
+      console.error(`CAPI Error (Attempt ${attempt}):`, error);
+      // Retry once if it fails
+      if (attempt < 2) {
+        setTimeout(() => sendFBConversion(payload, attempt + 1), 1000);
+      }
+    }
   }
 
   // Main click handler.
@@ -181,11 +216,11 @@ function getCookie(name) {
       }
 
       // 4) Gather form data.
-      const emailEl = document.getElementById('email-address');
-      const firstNameEl = document.getElementById('first-name');
-      const lastNameEl = document.getElementById('last-name');
-      const cardNameEl = document.getElementById('card-name');
-      const countryEl = document.getElementById('location-country');
+      const emailEl      = document.getElementById('email-address');
+      const firstNameEl  = document.getElementById('first-name');
+      const lastNameEl   = document.getElementById('last-name');
+      const cardNameEl   = document.getElementById('card-name');
+      const countryEl    = document.getElementById('location-country');
       const postalCodeEl = document.getElementById('location-postal-code');
 
       if (!emailEl || !firstNameEl || !lastNameEl || !cardNameEl || !countryEl || !postalCodeEl) {
@@ -269,30 +304,90 @@ function getCookie(name) {
           throw new Error(error.message);
         }
 
+        // ======= HANDLE SUCCESSFUL PAYMENT =======
         if (paymentIntent && paymentIntent.status === 'succeeded') {
-          // 8) Payment successful – create a cookie with donation data.
+          // (a) Generate a unique event_id for deduplication
+          const eventId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+          // (b) Grab or generate the FB click ID (fbclid), fbp, fbc
+          function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+          }
+
+          let fbclid = getQueryParam('fbclid') || getCookie('fbclid') || '';
+          let fbp    = getCookie('_fbp') || '';
+          let fbc    = '';
+
+          // If we have fbclid, build the "fbc" format: fb.1.<timestamp>.<fbclid>
+          if (fbclid) {
+            fbc = `fb.1.${Date.now()}.${fbclid}`;
+            setCookie('fbc', fbc, 90); // store 90 days
+          }
+          if (fbp) {
+            setCookie('fbp', fbp, 90); // refresh cookie
+          }
+
+          // (c) Store receipt data in a cookie (e.g. 1 hour)
           const receiptData = {
             amount: selectedDonation,
             email,
             name: `${firstName} ${lastName}`,
-            date: new Date().toString(),
-            country
+            date: new Date().toISOString(),
+            country,
+            event_id: eventId, // used for dedup
+            fbp,
+            fbc
           };
-          // Set donationReceipt cookie (valid for 1 hour).
-          document.cookie = `donationReceipt=${encodeURIComponent(JSON.stringify(receiptData))}; path=/; max-age=3600`;
+          setCookie('donationReceipt', JSON.stringify(receiptData), 1);
 
-          // Append order complete URL.
-          receiptData.orderCompleteUrl = window.location.origin + '/thanks.html';
-
-          // Retrieve fbclid from cookie (if available).
-          const fbclid = getCookie('fbclid') || '';
-
-          // 9) Send Facebook Conversion data (with retry logic).
-          sendFBConversion(receiptData, fbclid)
-            .finally(() => {
-              // 10) Redirect to thanks.html regardless of conversion success/failure.
-              window.location.href = 'thanks.html';
+          // (d) Fire Facebook Pixel Purchase event from the browser (check if fbq is defined)
+          if (typeof fbq !== 'undefined') {
+            fbq('track', 'Purchase', {
+              value: selectedDonation,
+              currency: 'USD',
+              content_name: 'Donation',
+              event_id: eventId,  // used for deduplication
+              user_data: {
+                em: email,
+                fn: firstName,
+                ln: lastName,
+                zp: postalCode,
+                country: country
+              },
+              custom_data: {
+                fbp: fbp,
+                fbc: fbc,
+                fbclid: fbclid
+              }
             });
+          }
+
+          // (e) Send the same event to your Conversions API endpoint (with retry)
+          const capiPayload = {
+            event_name: 'Purchase',
+            event_time: Math.floor(Date.now() / 1000),
+            event_id: eventId,
+            email: email,
+            amount: selectedDonation,
+            fbp: fbp,
+            fbc: fbc,
+            fbclid: fbclid,
+            user_data: {
+              em: email,
+              fn: firstName,
+              ln: lastName,
+              zp: postalCode,
+              country: country
+            }
+          };
+          sendFBConversion(capiPayload);
+
+          // (f) Redirect after a short delay (ensures data is sent)
+          setTimeout(() => {
+            window.location.href = 'thanks.html';
+          }, 500);
+
         } else {
           throw new Error('Payment failed or was not completed.');
         }
@@ -307,80 +402,4 @@ function getCookie(name) {
       console.error('Unexpected error in donation flow:', err);
     }
   });
-
-  /**********************************************
-   * Helper: setCookie (for updating donationReceipt)
-   **********************************************/
-  function setCookie(name, value, days) {
-    let expires = '';
-    if (days) {
-      const date = new Date();
-      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-      expires = '; expires=' + date.toUTCString();
-    }
-    document.cookie = name + '=' + encodeURIComponent(value) + expires + '; path=/';
-  }
-
-  /**********************************************
-   * Helper: sendFBConversion
-   * Sends conversion data to our backend with one retry.
-   **********************************************/
-  function sendFBConversion(data, fbclid, attempt = 1) {
-    const payload = {
-      name: data.name || '',
-      email: data.email || '',
-      amount: data.amount || '',
-      receiptId: data.receiptId || '',
-      fbclid: fbclid,
-      orderCompleteUrl: data.orderCompleteUrl,
-      country: data.country || ''
-    };
-
-    function doConversion() {
-      return fetch(API_DOMAIN + '/api/fb-conversion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-        .then(res => {
-          if (!res.ok) {
-            return res.text().then(text => { throw new Error(`Server responded with ${res.status}: ${text}`); });
-          }
-          return res.json();
-        })
-        .then(result => {
-          console.log("FB Conversion response:", result);
-          // Mark conversion as sent and update cookie (valid for 7 days).
-          data.fb_conversion_sent = true;
-          setCookie('donationReceipt', JSON.stringify(data), 7);
-          return result;
-        });
-    }
-
-    let conversionPromise;
-    if (!data.country) {
-      conversionPromise = fetch('https://ipapi.co/json/')
-        .then(response => response.json())
-        .then(ipData => {
-          payload.country = ipData.country || '';
-          data.country = payload.country;
-        })
-        .catch(err => {
-          console.warn("IP lookup failed, proceeding without country", err);
-        })
-        .then(() => doConversion());
-    } else {
-      conversionPromise = doConversion();
-    }
-
-    return conversionPromise.catch(err => {
-      if (attempt < 2) {
-        console.warn(`FB Conversion attempt ${attempt} failed. Retrying...`, err);
-        return sendFBConversion(data, fbclid, attempt + 1);
-      } else {
-        console.error(`FB Conversion attempt ${attempt} failed. Proceeding without conversion event.`, err);
-        return Promise.resolve();
-      }
-    });
-  }
 })();
