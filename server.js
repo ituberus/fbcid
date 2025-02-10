@@ -24,7 +24,20 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'somesecret';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// --------------------------------------------------------------------
+// UPDATED CORS CONFIGURATION: echo back the origin so that credentials
+// can be included while still allowing any domain.
+// --------------------------------------------------------------------
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    // echo back the origin in the CORS response
+    return callback(null, origin);
+  },
+  credentials: true,
+}));
+
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
