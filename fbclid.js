@@ -1,52 +1,47 @@
-  // Standard Facebook Pixel Base Code (Does NOT fire events on page load)
-  !function(f, b, e, v, n, t, s) {
-    if (f.fbq) return;
-    n = f.fbq = function() {
-      n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-    };
-    if (!f._fbq) f._fbq = n;
-    n.push = n;
-    n.loaded = !0;
-    n.version = '2.0';
-    n.queue = [];
-    t = b.createElement(e);
-    t.async = !0;
-    t.src = v;
-    s = b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t, s);
-  }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+// edit the railway link below
+const RAILWAY_BASE_URL = 'https://fbcid-production.up.railway.app';
+const CAPTURE_FBCLID_ENDPOINT = '/capture-fbclid';
 
-  // Initialize Pixel but DO NOT fire any events on this page
-  fbq('init', '1155603432794001'); // Replace with your actual Pixel ID
+!function(f, b, e, v, n, t, s) {
+  if (f.fbq) return;
+  n = f.fbq = function() {
+    n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+  };
+  if (!f._fbq) f._fbq = n;
+  n.push = n;
+  n.loaded = !0;
+  n.version = '2.0';
+  n.queue = [];
+  t = b.createElement(e);
+  t.async = !0;
+  t.src = v;
+  s = b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t, s);
+}(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
 
-  // Helper: Get a query parameter from the URL
-  function getQueryParam(param) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
-  }
+// Initialize Pixel (no events fired here)
+fbq('init', '1155603432794001'); // your real Pixel ID
 
-  // Helper: Simple cookie setter
-  function setCookie(name, value, days) {
-    let expires = "";
-    if (days) {
-      const date = new Date();
-      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-      expires = "; expires=" + date.toUTCString();
-    }
-    document.cookie = name + "=" + encodeURIComponent(value) + expires + "; path=/";
-  }
-
-  // Capture fbclid from the URL and store it for 30 days
-  const fbclid = getQueryParam('fbclid');
+// Capture fbclid from URL and store it in localStorage with expiration and on the backend
+(function captureFbclid() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const fbclid = urlParams.get('fbclid');
   if (fbclid) {
-    setCookie('fbclid', fbclid, 30);
-  }
-
-  // After fbq loads, capture the Facebook Browser ID (_fbp) and store it for 30 days
-  setTimeout(function() {
-    const fbpCookieMatch = document.cookie.match(new RegExp('(^| )_fbp=([^;]+)'));
-    if (fbpCookieMatch) {
-      const fbp = decodeURIComponent(fbpCookieMatch[2]);
-      setCookie('fbp', fbp, 30);
+    const fbclidData = { value: fbclid, expires: Date.now() + 90 * 24 * 60 * 60 * 1000 }; // 90 days expiration
+    try {
+      localStorage.setItem('fbclid', JSON.stringify(fbclidData));
+    } catch (error) {
+      sessionStorage.setItem('fbclid', fbclid);
     }
-  }, 500);
+
+    // Capture fbclid on the server side using POST
+    fetch(`${RAILWAY_BASE_URL}${CAPTURE_FBCLID_ENDPOINT}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fbclid: fbclid })
+    })
+    .then(() => console.log('Server session stored fbclid:', fbclid))
+    .catch(err => console.error('Error capturing fbclid on server:', err));
+  }
+})();
