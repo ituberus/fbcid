@@ -2,6 +2,7 @@
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
 const stripe = require('stripe');
@@ -45,6 +46,7 @@ app.use(cookieParser());
 
 app.use(
   session({
+    store: new SQLiteStore({ db: 'sessions.sqlite', table: 'sessions' }),
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
