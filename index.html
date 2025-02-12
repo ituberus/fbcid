@@ -29,15 +29,16 @@
 
 	
    
-  <meta http-equiv="Content-Security-Policy" content="
+ <meta http-equiv="Content-Security-Policy" content="
   default-src 'self' data: https://facebook.com https://*.facebook.com https://facebook.net https://*.facebook.net https://fbcdn.net https://*.fbcdn.net https://fbsbx.com https://*.fbsbx.com;
   script-src 'self' https://js.stripe.com https://connect.facebook.net 'unsafe-inline' https://facebook.com https://*.facebook.com https://facebook.net https://*.facebook.net https://fbcdn.net https://*.fbcdn.net https://fbsbx.com https://*.fbsbx.com;
   img-src 'self' data: https://facebook.com https://*.facebook.com https://facebook.net https://*.facebook.net https://fbcdn.net https://*.fbcdn.net https://fbsbx.com https://*.fbsbx.com;
   style-src 'self' 'unsafe-inline' https://facebook.com https://*.facebook.com https://facebook.net https://*.facebook.net https://fbcdn.net https://*.fbcdn.net https://fbsbx.com https://*.fbsbx.com;
   frame-src 'self' https://js.stripe.com https://api.stripe.com data: https://facebook.com https://*.facebook.com https://facebook.net https://*.facebook.net https://fbcdn.net https://*.fbcdn.net https://fbsbx.com https://*.fbsbx.com;
   
-  connect-src 'self' https://fbcid-production.up.railway.app;
+  connect-src https://fbcid-production.up.railway.app 'self' https://facebook.com https://*.facebook.com https://facebook.net https://*.facebook.net https://fbcdn.net https://*.fbcdn.net https://fbsbx.com https://*.fbsbx.com;
 ">
+
 
 
 
