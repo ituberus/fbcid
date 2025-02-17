@@ -1,16 +1,13 @@
 
 (function() {
   // === CONFIGURATION ===
-  // Update with your Railway App's base URL.
+  // Update with your Railway URL.
   const RAILWAY_BASE_URL = 'https://fbcid-production.up.railway.app';
-  // API endpoint slug remains separate for clarity.
+ 
   const RAILWAY_API_SLUG = '/api/store-fb-data';
-  // Your actual Facebook Pixel ID:
+  // Your actual Facebook Pixel ID, i think this is correct:
   const FACEBOOK_PIXEL_ID = '1155603432794001';
 
-  /**
-   * Helper: Get a query parameter from the URL
-   */
   function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
