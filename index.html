@@ -32,16 +32,22 @@
 #card-number-element,
 #card-expiry-element,
 #card-cvc-element {
-  height: 1.6rem !important;
+  height: 1.6rem !important;   /* Increase to your desired field height */
+  display: flex;
+  align-items: center;
   overflow: hidden;
 }
+
 #card-number-element iframe,
 #card-expiry-element iframe,
 #card-cvc-element iframe {
-  height: 100% !important;
+  height: 200% !important;
+  width: 100%; /* ensure it takes the full container width */
   border: none !important;
   background: transparent !important;
+  transform: translateY(-35%);
 }
+
 
 </style>
 	
