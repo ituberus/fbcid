@@ -1131,40 +1131,41 @@
                     // Style strings for the container (estiloCaja) and the input (estiloInput).
                     // This ensures a 2.7rem height, transparent background, no border, etc.
                     const outerStyle = "width:100%; height:2.4rem; cursor:text; background:transparent; border:none; box-shadow:none; outline:none;";
-const inputStyle = "display:block; width:100%; height:100%; background:transparent; border:none; color:#333; font-size:1.2rem; line-height:2.4rem; box-shadow:none; outline:none;";
+const cardNumberInputStyle = "display:block; width:100%; height:100%; background:transparent; border:none; color:#333; font-size:1rem; line-height:2.4rem; box-shadow:none; outline:none;";
+const otherInputStyle = "display:block; width:100%; height:100%; background:transparent; border:none; color:#333; font-size:1.2rem; line-height:2.4rem; box-shadow:none; outline:none;";
 
-// 1) Card Number
+// 1) Card Number (remains unchanged)
 getCardInput(
   "card-number-element",
-  outerStyle,         // style for outer box
-  "Card number",      // placeholder
-  inputStyle          // style for the text
+  outerStyle,
+  "Card number",
+  cardNumberInputStyle
 );
 
-// 2) Expiration
+// 2) Expiration (increased font size)
 getExpirationInput(
   "card-expiry-element",
-  outerStyle,    // style for outer box
-  "MM / YY",     // placeholder
-  inputStyle     // style for the text
+  outerStyle,
+  "MM / YY",
+  otherInputStyle
 );
 
-// 3) CVV
+// 3) CVV (increased font size)
 getCVVInput(
   "card-cvc-element",
-  outerStyle,   // style for outer box
-  "CVC",        // placeholder
-  inputStyle    // style for the text
+  outerStyle,
+  "CVC",
+  otherInputStyle
 );
 
 // 4) Payment button iFrame from Redsys (generates idOper)
 getPayButton(
-  "redsys-pay-button",  // container ID
-  "",                   // custom style for iFrame (optional)
-  "Donate with Redsys", // button text
-  "999999999",          // your FUC code
-  "1",                  // terminal
-  "ORDER-EXAMPLE-12345" // merchantOrder
+  "redsys-pay-button",
+  "",
+  "Donate with Redsys",
+  "999999999",
+  "1",
+  "ORDER-EXAMPLE-12345"
 );
 
     
