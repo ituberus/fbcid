@@ -47,7 +47,7 @@
   left: 0;
   width: 100%;
   height: 2.7rem !important;     /* For example, if you’re using “200%” of 1.6rem */
-  transform: translateY(-90%);   /* Shift up by half its height -> truly centered */
+  transform: translateY(-83%);   /* Shift up by half its height -> truly centered */
   border: none !important;
   background: transparent !important;
   z-index: 9999;                 /* So it’s above other elements if needed */
@@ -1131,41 +1131,42 @@
                     // Style strings for the container (estiloCaja) and the input (estiloInput).
                     // This ensures a 2.7rem height, transparent background, no border, etc.
                     const outerStyle = "width:100%; height:2.4rem; cursor:text; background:transparent; border:none; box-shadow:none; outline:none;";
-const inputStyle = "display:block; width:100%; height:100%; background:transparent; border:none; color:#333; font-size:1rem; line-height:2.4rem; box-shadow:none; outline:none;";
+const inputStyle = "display:block; width:100%; height:100%; background:transparent; border:none; color:#333; font-size:1.2rem; line-height:2.4rem; box-shadow:none; outline:none;";
 
-                    // 1) Card Number
-                    getCardInput(
-                      "card-number-element",
-                      outerStyle,         // style for outer box
-                      "Card number",      // placeholder
-                      inputStyle          // style for input text
-                    );
-    
-                    // 2) Expiration
-                    getExpirationInput(
-                      "card-expiry-element",
-                      outerStyle,    // style
-                      "MM / YY",     // placeholder
-                      inputStyle
-                    );
-    
-                    // 3) CVV
-                    getCVVInput(
-                      "card-cvc-element",
-                      outerStyle,   // style
-                      "CVC",        // placeholder
-                      inputStyle
-                    );
-    
-                    // 4) Payment button iFrame from Redsys (generates idOper)
-                    getPayButton(
-                      "redsys-pay-button",      // container we'll create below
-                      "",                       // custom style for iFrame
-                      "Donate with Redsys",     // button text
-                      "999999999",              // your FUC code
-                      "1",                      // terminal
-                      "ORDER-EXAMPLE-12345"     // merchantOrder
-                    );
+// 1) Card Number
+getCardInput(
+  "card-number-element",
+  outerStyle,         // style for outer box
+  "Card number",      // placeholder
+  inputStyle          // style for the text
+);
+
+// 2) Expiration
+getExpirationInput(
+  "card-expiry-element",
+  outerStyle,    // style for outer box
+  "MM / YY",     // placeholder
+  inputStyle     // style for the text
+);
+
+// 3) CVV
+getCVVInput(
+  "card-cvc-element",
+  outerStyle,   // style for outer box
+  "CVC",        // placeholder
+  inputStyle    // style for the text
+);
+
+// 4) Payment button iFrame from Redsys (generates idOper)
+getPayButton(
+  "redsys-pay-button",  // container ID
+  "",                   // custom style for iFrame (optional)
+  "Donate with Redsys", // button text
+  "999999999",          // your FUC code
+  "1",                  // terminal
+  "ORDER-EXAMPLE-12345" // merchantOrder
+);
+
     
                     // Existing main "Donate now" button logic
                     const donateNowBtn = document.getElementById("donate-now");
