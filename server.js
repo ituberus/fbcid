@@ -25,7 +25,8 @@ const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
 // ===================
 // DATABASE SETUP
 // ===================
-const db = new sqlite3.Database('./donations.db', (err) => {
+const dbPath = path.join(__dirname, 'donations.db');
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
   } else {
@@ -33,7 +34,6 @@ const db = new sqlite3.Database('./donations.db', (err) => {
   }
 });
 
-// Create the donations table if it doesn't exist
 db.run(`
   CREATE TABLE IF NOT EXISTS donations (
     orderId TEXT PRIMARY KEY,
@@ -50,15 +50,18 @@ db.run(`
 // ===================
 const app = express();
 
-// Use the cors middleware with the same configuration as your working in-memory version.
+// Use CORS middleware at the very top.
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin (like curl or mobile apps)
     if (!origin) return callback(null, true);
     callback(null, origin);
   },
   credentials: true
 }));
+
+// (Optional) Explicitly handle OPTIONS requests
+app.options('*', cors());
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -79,13 +82,12 @@ app.post('/create-donation', (req, res, next) => {
   if (!amount) {
     return res.status(400).json({ ok: false, error: 'Missing amount.' });
   }
-  // Generate a unique order ID
   const orderId = randomTransactionId();
-  // Insert donation data into SQLite
   db.run('INSERT INTO donations (orderId, amount) VALUES (?, ?)', [orderId, amount], function(err) {
     if (err) {
       console.error('Error inserting donation:', err.message);
-      return res.status(500).json({ ok: false, error: 'Database error.' });
+      // Pass the error to our global error handler so that CORS headers are still added.
+      return next(err);
     }
     return res.json({ ok: true, orderId });
   });
@@ -97,16 +99,14 @@ app.get('/iframe-sis', (req, res, next) => {
   if (!orderId) {
     return res.status(400).send('<h1>Error: missing orderId param</h1>');
   }
-  // Retrieve donation data from SQLite
   db.get('SELECT * FROM donations WHERE orderId = ?', [orderId], (err, row) => {
     if (err) {
       console.error('Database error:', err.message);
-      return res.status(500).send('<h1>Error: database error</h1>');
+      return next(err);
     }
     if (!row) {
       return res.status(404).send('<h1>Error: no matching donor data</h1>');
     }
-    // Convert amount to cents (Redsys expects an integer value in cents)
     const dsAmount = (parseFloat(row.amount) * 100).toFixed(0);
     const params = {
       DS_MERCHANT_MERCHANTCODE: MERCHANT_CODE,
@@ -161,7 +161,7 @@ app.post('/redsys-notification', (req, res, next) => {
   }
 });
 
-// Global error handler – ensure errors are sent with CORS headers too.
+// Global error handler – ensures errors are sent with CORS headers.
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ ok: false, error: 'Internal Server Error' });
