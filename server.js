@@ -12,16 +12,16 @@ const path = require('path');
 // Redsys easy - using production URLs now
 const {
   createRedsysAPI,
-  PRODUCTION_URLS, // using production URLs
+  PRODUCTION_URLS,
   randomTransactionId
 } = require('redsys-easy');
 
 // **** Production configuration ****
-const MERCHANT_CODE = '367149531'; 
+const MERCHANT_CODE = '367149531';
 const TERMINAL = '1';
 const SECRET_KEY = 'xdfHKzvmKSvUxPz91snmmjx14FpSWsU7';
 
-// Callback URLs – now using your Railway domain
+// Callback URLs – using your Railway domain
 const MERCHANT_MERCHANTURL = 'https://fbcid-production.up.railway.app/redsys-notification';
 const MERCHANT_URLOK = 'https://fbcid-production.up.railway.app/thanks.html';
 const MERCHANT_URLKO = 'https://fbcid-production.up.railway.app/error.html';
@@ -42,7 +42,7 @@ const app = express();
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g., mobile apps, curl)
+    // Allow requests with no origin (e.g., mobile apps or curl)
     if (!origin) return callback(null, true);
     callback(null, origin);
   },
@@ -59,7 +59,7 @@ app.use(express.static(path.join(__dirname, 'views')));
 // ROUTES
 // ===================
 
-// Landing page for donation (served as index.html)
+// Serve the donation page (index.html)
 app.get('/', (req, res, next) => {
   try {
     res.sendFile(path.join(__dirname, 'views', 'index.html'));
@@ -68,7 +68,7 @@ app.get('/', (req, res, next) => {
   }
 });
 
-// Endpoint to create a donation (only "amount" is required)
+// Endpoint to create a donation and store donor data (only "amount" is required)
 app.post('/create-donation', (req, res, next) => {
   try {
     const { amount } = req.body;
@@ -81,10 +81,10 @@ app.post('/create-donation', (req, res, next) => {
     // Store donor data (only amount and orderId)
     const donor = { amount, orderId };
     res.cookie(`donor_${orderId}`, JSON.stringify(donor), {
-      maxAge: 30 * 60 * 1000, // 30 minutes
-      // These settings are necessary for cross-site cookies
-      sameSite: 'none',
-      secure: true
+      maxAge: 30 * 60 * 1000,  // 30 minutes
+      sameSite: 'none',        // required for cross-site cookies
+      secure: true,            // required for HTTPS
+      domain: 'fbcid-production.up.railway.app'
     });
 
     return res.json({ ok: true, orderId });
@@ -108,7 +108,7 @@ app.get('/iframe-sis', (req, res, next) => {
     }
     const donor = JSON.parse(donorCookie);
 
-    // Convert amount to cents (as required by Redsys)
+    // Convert amount to cents (Redsys expects an integer amount in cents)
     const dsAmount = (parseFloat(donor.amount) * 100).toFixed(0);
 
     const params = {
@@ -119,14 +119,13 @@ app.get('/iframe-sis', (req, res, next) => {
       DS_MERCHANT_CURRENCY: '978', // EUR
       DS_MERCHANT_TRANSACTIONTYPE: '0',
       DS_MERCHANT_CONSUMERLANGUAGE: '2',
-      DS_MERCHANT_PERSOCODE: '1234', 
+      DS_MERCHANT_PERSOCODE: '1234',
       DS_MERCHANT_MERCHANTURL: MERCHANT_MERCHANTURL,
       DS_MERCHANT_URLOK: MERCHANT_URLOK,
       DS_MERCHANT_URLKO: MERCHANT_URLKO
     };
 
     const form = createRedirectForm(params);
-   
     const html = `
       <!DOCTYPE html>
       <html lang="en">
@@ -158,10 +157,10 @@ app.post('/redsys-notification', (req, res, next) => {
     const responseCode = parseInt(result.Ds_Response || '9999', 10);
     if (responseCode < 100) {
       console.log('Payment SUCCESS, order:', result.Ds_Order);
-      return res.send('OK'); 
+      return res.send('OK');
     } else {
       console.log('Payment FAILED, order:', result.Ds_Order, 'code:', responseCode);
-      return res.send('OK'); 
+      return res.send('OK');
     }
   } catch (err) {
     console.error('Error in /redsys-notification:', err);
