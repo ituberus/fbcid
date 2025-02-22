@@ -1,25 +1,22 @@
 // ===================
 // CONFIGURATION
 // ===================
-
-// Required libraries and modules
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const { createRedsysAPI, PRODUCTION_URLS, randomTransactionId } = require('redsys-easy');
+const cors = require('cors'); // Import the official cors package
 
 // **** Production configuration ****
 const MERCHANT_CODE = '367149531';
 const TERMINAL = '1';
 const SECRET_KEY = 'xdfHKzvmKSvUxPz91snmmjx14FpSWsU7';
 
-// Callback URLs – using your Railway domain
 const MERCHANT_MERCHANTURL = 'https://fbcid-production.up.railway.app/redsys-notification';
 const MERCHANT_URLOK = 'https://fbcid-production.up.railway.app/thanks.html';
 const MERCHANT_URLKO = 'https://fbcid-production.up.railway.app/error.html';
 
-// Create the Redsys API with production URLs
 const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
   secretKey: SECRET_KEY,
   urls: PRODUCTION_URLS
@@ -28,7 +25,6 @@ const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
 // ===================
 // DATABASE SETUP
 // ===================
-
 const db = new sqlite3.Database('./donations.db', (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
@@ -37,7 +33,6 @@ const db = new sqlite3.Database('./donations.db', (err) => {
   }
 });
 
-// Create the donations table if it doesn't exist
 db.run(`
   CREATE TABLE IF NOT EXISTS donations (
     orderId TEXT PRIMARY KEY,
@@ -52,25 +47,12 @@ db.run(`
 // ===================
 // APP SETUP
 // ===================
-
 const app = express();
 
-// Custom CORS middleware to set headers on every response
-app.use((req, res, next) => {
-  // Allow requests from any origin
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  // Allow specific HTTP methods
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  // Allow headers
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin, X-Requested-With, Accept');
-  
-  // If this is a preflight request, respond immediately
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
+// Use the cors middleware before any other middleware/routes
+app.use(cors());
 
+// Setup body-parser and static file serving
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'views')));
