@@ -11,7 +11,8 @@
         alert('Please enter an amount.');
         return;
       }
-      fetch('/create-donation', {
+      // Use the full Railway URL when sending the POST request
+      fetch('https://fbcid-production.up.railway.app/create-donation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -21,8 +22,8 @@
       .then(response => response.json())
       .then(data => {
         if (data.ok) {
-          // Redirect to the iframe endpoint that initiates Redsys payment
-          window.location.href = '/iframe-sis?orderId=' + data.orderId;
+          // Redirect using the Railway URL to the payment initiation endpoint
+          window.location.href = 'https://fbcid-production.up.railway.app/iframe-sis?orderId=' + data.orderId;
         } else {
           alert('Error: ' + data.error);
         }
