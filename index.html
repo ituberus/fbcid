@@ -3,42 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <title>Donate</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+  </style>
   <script>
-    function submitDonation(event) {
-      event.preventDefault();
+    async function submitDonation(e) {
+      e.preventDefault();
       const amount = document.getElementById('amount').value;
       if (!amount) {
         alert('Please enter an amount.');
         return;
       }
-      // Use the full Railway URL when sending the POST request
-      fetch('https://fbcid-production.up.railway.app/create-donation', {
+      // Send a POST request to your Railway backend using the full URL.
+      const response = await fetch('https://fbcid-production.up.railway.app/create-donation', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ amount: amount })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.ok) {
-          // Redirect using the Railway URL to the payment initiation endpoint
-          window.location.href = 'https://fbcid-production.up.railway.app/iframe-sis?orderId=' + data.orderId;
-        } else {
-          alert('Error: ' + data.error);
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert('An error occurred.');
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ensure the cookie is saved on Railway domain
+        body: JSON.stringify({ amount })
       });
+      const data = await response.json();
+      if (data.ok) {
+        // Redirect to the payment initiation endpoint (also using full URL)
+        window.location.href = 'https://fbcid-production.up.railway.app/iframe-sis?orderId=' + encodeURIComponent(data.orderId);
+      } else {
+        alert('Error: ' + data.error);
+      }
     }
   </script>
 </head>
 <body>
   <h1>Donate</h1>
   <form onsubmit="submitDonation(event)">
-    <label for="amount">Amount (EUR):</label>
+    <label for="amount">Amount (€):</label>
     <input type="number" id="amount" name="amount" step="0.01" required>
     <button type="submit">Donate</button>
   </form>
