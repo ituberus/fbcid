@@ -40,14 +40,21 @@ const {
 // ===================
 const app = express();
 
-// Allow CORS from any origin
-app.use(cors());
+// Allow CORS from any origin with credentials support
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    // Reflect the request origin
+    callback(null, origin);
+  },
+  credentials: true
+}));
 
 // Parse application/json and application/x-www-form-urlencoded
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-
 
 app.use(express.static(path.join(__dirname, 'views')));
 
