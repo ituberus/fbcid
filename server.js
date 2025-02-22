@@ -5,11 +5,10 @@
 // Required libraries and modules
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors');
+// Note: You can remove the separate cors import if you’re using the custom middleware below.
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
-// Redsys easy - using production URLs now
 const {
   createRedsysAPI,
   PRODUCTION_URLS,
@@ -62,13 +61,18 @@ db.run(`
 
 const app = express();
 
-// Open CORS to any domain
-app.use(cors({
-  origin: '*'
-}));
-// Also ensure OPTIONS preflight is handled:
-app.options('*', cors());
+// Custom CORS middleware to set headers on every response
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*'); // Allow any origin
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200); // Respond to preflight requests immediately
+  }
+  next();
+});
 
+// Parse incoming request bodies
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'views')));
