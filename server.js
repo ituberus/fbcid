@@ -35,6 +35,7 @@ const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
 // ===================
 // DATABASE SETUP
 // ===================
+
 const db = new sqlite3.Database('./donations.db', (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
@@ -58,15 +59,15 @@ db.run(`
 // ===================
 // APP SETUP
 // ===================
+
 const app = express();
 
+// Open CORS to any domain
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    callback(null, origin);
-  },
-  credentials: true
+  origin: '*'
 }));
+// Also ensure OPTIONS preflight is handled:
+app.options('*', cors());
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
