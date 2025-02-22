@@ -17,6 +17,7 @@
     "crypto": "^1.0.1",
     "express": "^4.21.2",
     "redsys-easy": "^5.2.11",
-    "sqlite": "^5.1.1"
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
   }
 }
