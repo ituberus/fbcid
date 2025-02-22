@@ -5,7 +5,6 @@
 // Required libraries and modules
 const express = require('express');
 const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const path = require('path');
 
@@ -27,13 +26,13 @@ const MERCHANT_URLOK = 'https://fbcid-production.up.railway.app/thanks.html';
 const MERCHANT_URLKO = 'https://fbcid-production.up.railway.app/error.html';
 
 // Create the Redsys API with production URLs
-const {
-  createRedirectForm,
-  processRedirectNotification,
-} = createRedsysAPI({
+const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
   secretKey: SECRET_KEY,
   urls: PRODUCTION_URLS
 });
+
+// In-memory store for donation data (this replaces cookies)
+const donations = {};
 
 // ===================
 // APP SETUP
@@ -42,7 +41,6 @@ const app = express();
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g., mobile apps or curl)
     if (!origin) return callback(null, true);
     callback(null, origin);
   },
@@ -51,8 +49,6 @@ app.use(cors({
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-
 app.use(express.static(path.join(__dirname, 'views')));
 
 // ===================
@@ -68,7 +64,7 @@ app.get('/', (req, res, next) => {
   }
 });
 
-// Endpoint to create a donation and store donor data (only "amount" is required)
+// Endpoint to create a donation and store donor data in memory (only "amount" is required)
 app.post('/create-donation', (req, res, next) => {
   try {
     const { amount } = req.body;
@@ -77,16 +73,8 @@ app.post('/create-donation', (req, res, next) => {
     }
     // Generate a unique order ID
     const orderId = randomTransactionId();
-
-    // Store donor data (only amount and orderId)
-    const donor = { amount, orderId };
-    res.cookie(`donor_${orderId}`, JSON.stringify(donor), {
-      maxAge: 30 * 60 * 1000,  // 30 minutes
-      sameSite: 'none',        // required for cross-site cookies
-      secure: true,            // required for HTTPS
-      domain: 'fbcid-production.up.railway.app'
-    });
-
+    // Store donation data in memory
+    donations[orderId] = { amount };
     return res.json({ ok: true, orderId });
   } catch (err) {
     console.error('Error in /create-donation:', err);
@@ -101,15 +89,13 @@ app.get('/iframe-sis', (req, res, next) => {
     if (!orderId) {
       return res.status(400).send('<h1>Error: missing orderId param</h1>');
     }
-    // Retrieve donor data from the cookie
-    const donorCookie = req.cookies[`donor_${orderId}`];
-    if (!donorCookie) {
+    // Retrieve donation data from the in-memory store
+    const donation = donations[orderId];
+    if (!donation) {
       return res.status(404).send('<h1>Error: no matching donor data</h1>');
     }
-    const donor = JSON.parse(donorCookie);
-
-    // Convert amount to cents (Redsys expects an integer amount in cents)
-    const dsAmount = (parseFloat(donor.amount) * 100).toFixed(0);
+    // Convert amount to cents (Redsys expects an integer value in cents)
+    const dsAmount = (parseFloat(donation.amount) * 100).toFixed(0);
 
     const params = {
       DS_MERCHANT_MERCHANTCODE: MERCHANT_CODE,
