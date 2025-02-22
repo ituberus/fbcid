@@ -16,6 +16,7 @@
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "express": "^4.21.2",
-    "redsys-easy": "^5.2.11"
+    "redsys-easy": "^5.2.11",
+    "sqlite": "^5.1.1"
   }
 }
