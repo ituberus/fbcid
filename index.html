@@ -21,7 +21,7 @@
       const response = await fetch('https://fbcid-production.up.railway.app/create-donation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',  // ensures cookies are set for the Railway domain
+        // No need for credentials now since we're not using cookies.
         body: JSON.stringify({ amount })
       });
       const data = await response.json();
