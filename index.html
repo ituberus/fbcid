@@ -544,7 +544,7 @@
                   });
                 </script>
 
-                <!-- Additional fields before the payment options -->
+                <!-- Additional fields before the payment options (REMOVED: email/name/country/zip) -->
                 <div
                   class="checkoutCurrencyField m-form-field m-form-field--stacked hrt-mb-3"
                   bis_skin_checked="1"
@@ -556,6 +556,7 @@
                     ></label>
                   </div>
                 </div>
+
                 <div aria-live="polite" class="hrt-sr-only" bis_skin_checked="1"></div>
 
                 <fieldset
@@ -631,11 +632,6 @@
                               </div>
                             </label>
                           </div>
-                          <!-- 
-                            REMOVED the embedded Redsys inSite fields for card number, expiry, cvc, etc.
-                            Also removed "Use as billing name" and "Name on card."
-                            We are now using redirect method instead.
-                          -->
                         </li>
                       </ul>
                     </div>
@@ -648,465 +644,7 @@
                   bis_skin_checked="1"
                 ></div>
 
-                <!-- Personal Info Fields (Name, Email, etc.) - We'll keep them here -->
-                <div
-                  class="credit-card-form-fields hrt-mt-1 hrt-ml-4 credit-card-form-fields_creditCardPaymentHideLegend__baBa8 hrt-fieldset"
-                >
-                  <legend class="hrt-font-bold hrt-fieldset-legend sf-hidden"></legend>
-                  <div class="hrt-mt-2" bis_skin_checked="1">
-                    <div
-                      class="credit-card-form-fields_creditCardGridFields__4DXxM"
-                      bis_skin_checked="1"
-                    >
-                      <div
-                        class="donation-personal-fields_donationPersonalFields__fdEpm"
-                        bis_skin_checked="1"
-                      >
-                        <div
-                          class="donation-personal-fields_donationPersonalRow__mqFjZ donation-personal-fields_donationPersonalRowParent__gvwgP"
-                          bis_skin_checked="1"
-                        >
-                          <!-- Email field -->
-                          <div class="hrt-text-field" bis_skin_checked="1">
-                            <div
-                              class="hrt-text-field-wrapper"
-                              bis_skin_checked="1"
-                            >
-                              <div
-                                class="hrt-text-field-inner"
-                                bis_skin_checked="1"
-                              >
-                                <input
-                                  aria-invalid="false"
-                                  class="hrt-text-field-input"
-                                  id="email-address"
-                                  placeholder=" "
-                                  name="email"
-                                  type="email"
-                                  autocomplete="email"
-                                  value=""
-                                />
-                                <label
-                                  class="hrt-text-field-label"
-                                  for="email-address"
-                                >
-                                  Email address
-                                </label>
-                              </div>
-                            </div>
-                            <!-- Error message below Email -->
-                            <div class="error-message" id="email-error">
-                              <img src="error.svg" alt="" class="error-icon" />
-                              <span></span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div
-                          class="donation-personal-fields_donationPersonalRow__mqFjZ donation-personal-fields_donationPersonalRowParent__gvwgP"
-                          bis_skin_checked="1"
-                        >
-                          <!-- First name -->
-                          <div class="hrt-text-field" bis_skin_checked="1">
-                            <div
-                              class="hrt-text-field-wrapper"
-                              bis_skin_checked="1"
-                            >
-                              <div
-                                class="hrt-text-field-inner"
-                                bis_skin_checked="1"
-                              >
-                                <input
-                                  aria-invalid="false"
-                                  class="hrt-text-field-input"
-                                  id="first-name"
-                                  placeholder=" "
-                                  name="firstName"
-                                  type="text"
-                                  autocomplete="given-name"
-                                  value=""
-                                />
-                                <label
-                                  class="hrt-text-field-label"
-                                  for="first-name"
-                                >
-                                  Name
-                                </label>
-                              </div>
-                            </div>
-                            <!-- Error message below First Name -->
-                            <div class="error-message" id="first-name-error">
-                              <img src="error.svg" alt="" class="error-icon" />
-                              <span></span>
-                            </div>
-                          </div>
-
-                          <!-- Last name -->
-                          <div class="hrt-text-field" bis_skin_checked="1">
-                            <div
-                              class="hrt-text-field-wrapper"
-                              bis_skin_checked="1"
-                            >
-                              <div
-                                class="hrt-text-field-inner"
-                                bis_skin_checked="1"
-                              >
-                                <input
-                                  aria-invalid="false"
-                                  class="hrt-text-field-input"
-                                  id="last-name"
-                                  placeholder=" "
-                                  name="lastName"
-                                  type="text"
-                                  autocomplete="family-name"
-                                  value=""
-                                />
-                                <label
-                                  class="hrt-text-field-label"
-                                  for="last-name"
-                                >
-                                  Surname
-                                </label>
-                              </div>
-                            </div>
-                            <!-- Error message below Last Name -->
-                            <div class="error-message" id="last-name-error">
-                              <img src="error.svg" alt="" class="error-icon" />
-                              <span></span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Short address fields for Country and Postal Code -->
-                      <div
-                        class="short-address-fields_donationLocationFields__CsuR3"
-                        bis_skin_checked="1"
-                      >
-                        <div
-                          class="short-address-fields_donationLocationRow__hnPH_ short-address-fields_donationLocationRowParent__b1cQI"
-                          bis_skin_checked="1"
-                        >
-                          <div
-                            class="short-address-fields_donationLocationRow__hnPH_"
-                            bis_skin_checked="1"
-                          >
-                            <div class="hrt-select-field" bis_skin_checked="1">
-                              <div
-                                class="hrt-select-field-wrapper"
-                                bis_skin_checked="1"
-                              >
-                                <select
-                                  aria-invalid="false"
-                                  class="hrt-select-field-select"
-                                  id="location-country"
-                                  name="country"
-                                  layout="stacked"
-                                >
-                                  <option value=US><font style=vertical-align:inherit><font style=vertical-align:inherit>United States</font></font>
-                                                                     <option value=CA><font style=vertical-align:inherit><font style=vertical-align:inherit>Canada</font></font>
-                                                                     <option value=MX><font style=vertical-align:inherit><font style=vertical-align:inherit>Mexico</font></font>
-                                                                     <option value=GB><font style=vertical-align:inherit><font style=vertical-align:inherit>United Kingdom</font></font>
-                                                                     <option value=ZA><font style=vertical-align:inherit><font style=vertical-align:inherit>South Africa</font></font>
-                                                                     <option value=AL><font style=vertical-align:inherit><font style=vertical-align:inherit>Albania</font></font>
-                                                                     <option value=DE><font style=vertical-align:inherit><font style=vertical-align:inherit>Germany</font></font>
-                                                                     <option value=AD><font style=vertical-align:inherit><font style=vertical-align:inherit>Andorra</font></font>
-                                                                     <option value=AO><font style=vertical-align:inherit><font style=vertical-align:inherit>Angola</font></font>
-                                                                     <option value=AI><font style=vertical-align:inherit><font style=vertical-align:inherit>Anguilla</font></font>
-                                                                     <option value=AG><font style=vertical-align:inherit><font style=vertical-align:inherit>Antigua and Barbuda</font></font>
-                                                                     <option value=AN><font style=vertical-align:inherit><font style=vertical-align:inherit>Netherlands Antilles</font></font>
-                                                                     <option value=SA><font style=vertical-align:inherit><font style=vertical-align:inherit>Saudi Arabia</font></font>
-                                                                     <option value=DZ><font style=vertical-align:inherit><font style=vertical-align:inherit>Algeria</font></font>
-                                                                     <option value=AR><font style=vertical-align:inherit><font style=vertical-align:inherit>Argentina</font></font>
-                                                                     <option value=AM><font style=vertical-align:inherit><font style=vertical-align:inherit>Armenia</font></font>
-                                                                     <option value=AW><font style=vertical-align:inherit><font style=vertical-align:inherit>Aruba</font></font>
-                                                                     <option value=AU><font style=vertical-align:inherit><font style=vertical-align:inherit>Australia</font></font>
-                                                                     <option value=AT><font style=vertical-align:inherit><font style=vertical-align:inherit>Austria</font></font>
-                                                                     <option value=AZ><font style=vertical-align:inherit><font style=vertical-align:inherit>Azerbaijan</font></font>
-                                                                     <option value=BS><font style=vertical-align:inherit><font style=vertical-align:inherit>Bahamas</font></font>
-                                                                     <option value=BH><font style=vertical-align:inherit><font style=vertical-align:inherit>Bahrain</font></font>
-                                                                     <option value=BD><font style=vertical-align:inherit><font style=vertical-align:inherit>Bangladesh</font></font>
-                                                                     <option value=BB><font style=vertical-align:inherit><font style=vertical-align:inherit>Barbados</font></font>
-                                                                     <option value=BE><font style=vertical-align:inherit><font style=vertical-align:inherit>Belgium</font></font>
-                                                                     <option value=BZ><font style=vertical-align:inherit><font style=vertical-align:inherit>Belize</font></font>
-                                                                     <option value=BJ><font style=vertical-align:inherit><font style=vertical-align:inherit>Benin</font></font>
-                                                                     <option value=BM><font style=vertical-align:inherit><font style=vertical-align:inherit>Bermuda</font></font>
-                                                                     <option value=BO><font style=vertical-align:inherit><font style=vertical-align:inherit>Bolivia</font></font>
-                                                                     <option value=BA><font style=vertical-align:inherit><font style=vertical-align:inherit>Bosnia and Herzegovina</font></font>
-                                                                     <option value=BW><font style=vertical-align:inherit><font style=vertical-align:inherit>Botswana</font></font>
-                                                                     <option value=BR><font style=vertical-align:inherit><font style=vertical-align:inherit>Brazil</font></font>
-                                                                     <option value=BN><font style=vertical-align:inherit><font style=vertical-align:inherit>Brunei</font></font>
-                                                                     <option value=BG><font style=vertical-align:inherit><font style=vertical-align:inherit>Bulgaria</font></font>
-                                                                     <option value=BF><font style=vertical-align:inherit><font style=vertical-align:inherit>Burkina Faso</font></font>
-                                                                     <option value=BI><font style=vertical-align:inherit><font style=vertical-align:inherit>Burundi</font></font>
-                                                                     <option value=BT><font style=vertical-align:inherit><font style=vertical-align:inherit>Bhutan</font></font>
-                                                                     <option value=CV><font style=vertical-align:inherit><font style=vertical-align:inherit>Cape Verde</font></font>
-                                                                     <option value=CM><font style=vertical-align:inherit><font style=vertical-align:inherit>Cameroon</font></font>
-                                                                     <option value=KH><font style=vertical-align:inherit><font style=vertical-align:inherit>Cambodia</font></font>
-                                                                     <option value=KZ><font style=vertical-align:inherit><font style=vertical-align:inherit>Kazakhstan</font></font>
-                                                                     <option value=TD><font style=vertical-align:inherit><font style=vertical-align:inherit>Chad</font></font>
-                                                                     <option value=CL><font style=vertical-align:inherit><font style=vertical-align:inherit>Chile</font></font>
-                                                                     <option value=CY><font style=vertical-align:inherit><font style=vertical-align:inherit>Cyprus</font></font>
-                                                                     <option value=VA><font style=vertical-align:inherit><font style=vertical-align:inherit>Vatican City</font></font>
-                                                                     <option value=SG><font style=vertical-align:inherit><font style=vertical-align:inherit>Singapore</font></font>
-                                                                     <option value=CO><font style=vertical-align:inherit><font style=vertical-align:inherit>Colombia</font></font>
-                                                                     <option value=KM><font style=vertical-align:inherit><font style=vertical-align:inherit>Comoros</font></font>
-                                                                     <option value=CG><font style=vertical-align:inherit><font style=vertical-align:inherit>Congo (Republic)</font></font>
-                                                                     <option value=KR><font style=vertical-align:inherit><font style=vertical-align:inherit>South Korea</font></font>
-                                                                     <option value=CR><font style=vertical-align:inherit><font style=vertical-align:inherit>Costa Rica</font></font>
-                                                                     <option value=HR><font style=vertical-align:inherit><font style=vertical-align:inherit>Croatia</font></font>
-                                                                     <option value=DK><font style=vertical-align:inherit><font style=vertical-align:inherit>Denmark</font></font>
-                                                                     <option value=DJ><font style=vertical-align:inherit><font style=vertical-align:inherit>Djibouti</font></font>
-                                                                     <option value=DM><font style=vertical-align:inherit><font style=vertical-align:inherit>Dominica</font></font>
-                                                                     <option value=CD><font style=vertical-align:inherit><font style=vertical-align:inherit>DR Congo</font></font>
-                                                                     <option value=EG><font style=vertical-align:inherit><font style=vertical-align:inherit>Egypt</font></font>
-                                                                     <option value=SV><font style=vertical-align:inherit><font style=vertical-align:inherit>El Salvador</font></font>
-                                                                     <option value=AE><font style=vertical-align:inherit><font style=vertical-align:inherit>United Arab Emirates</font></font>
-                                                                     <option value=EC><font style=vertical-align:inherit><font style=vertical-align:inherit>Ecuador</font></font>
-                                                                     <option value=ER><font style=vertical-align:inherit><font style=vertical-align:inherit>Eritrea</font></font>
-                                                                     <option value=SK><font style=vertical-align:inherit><font style=vertical-align:inherit>Slovakia</font></font>
-                                                                     <option value=SI><font style=vertical-align:inherit><font style=vertical-align:inherit>Slovenia</font></font>
-                                                                     <option value=ES><font style=vertical-align:inherit><font style=vertical-align:inherit>Spain</font></font>
-                                                                     <option value=EE><font style=vertical-align:inherit><font style=vertical-align:inherit>Estonia</font></font>
-                                                                     <option value=ET><font style=vertical-align:inherit><font style=vertical-align:inherit>Ethiopia</font></font>
-                                                                     <option value=FJ><font style=vertical-align:inherit><font style=vertical-align:inherit>Fiji</font></font>
-                                                                     <option value=PH><font style=vertical-align:inherit><font style=vertical-align:inherit>Philippines</font></font>
-                                                                     <option value=FI><font style=vertical-align:inherit><font style=vertical-align:inherit>Finland</font></font>
-                                                                     <option value=FR><font style=vertical-align:inherit><font style=vertical-align:inherit>France</font></font>
-                                                                     <option value=GA><font style=vertical-align:inherit><font style=vertical-align:inherit>Gabon</font></font>
-                                                                     <option value=GM><font style=vertical-align:inherit><font style=vertical-align:inherit>Gambia</font></font>
-                                                                     <option value=GH><font style=vertical-align:inherit><font style=vertical-align:inherit>Ghana</font></font>
-                                                                     <option value=GE><font style=vertical-align:inherit><font style=vertical-align:inherit>Georgia</font></font>
-                                                                     <option value=GI><font style=vertical-align:inherit><font style=vertical-align:inherit>Gibraltar</font></font>
-                                                                     <option value=GD><font style=vertical-align:inherit><font style=vertical-align:inherit>Grenade</font></font>
-                                                                     <option value=GR><font style=vertical-align:inherit><font style=vertical-align:inherit>Greece</font></font>
-                                                                     <option value=GL><font style=vertical-align:inherit><font style=vertical-align:inherit>Greenland</font></font>
-                                                                     <option value=GP><font style=vertical-align:inherit><font style=vertical-align:inherit>Guadeloupe</font></font>
-                                                                     <option value=GU><font style=vertical-align:inherit><font style=vertical-align:inherit>Guam</font></font>
-                                                                     <option value=GT><font style=vertical-align:inherit><font style=vertical-align:inherit>Guatemala</font></font>
-                                                                     <option value=GG><font style=vertical-align:inherit><font style=vertical-align:inherit>Guernsey</font></font>
-                                                                     <option value=GY><font style=vertical-align:inherit><font style=vertical-align:inherit>Guiana</font></font>
-                                                                     <option value=GF><font style=vertical-align:inherit><font style=vertical-align:inherit>French Guiana</font></font>
-                                                                     <option value=GN><font style=vertical-align:inherit><font style=vertical-align:inherit>Guinea</font></font>
-                                                                     <option value=GQ><font style=vertical-align:inherit><font style=vertical-align:inherit>Equatorial Guinea</font></font>
-                                                                     <option value=GW><font style=vertical-align:inherit><font style=vertical-align:inherit>Guinea-Bissau</font></font>
-                                                                     <option value=HT><font style=vertical-align:inherit><font style=vertical-align:inherit>Haiti</font></font>
-                                                                     <option value=NL><font style=vertical-align:inherit><font style=vertical-align:inherit>Netherlands</font></font>
-                                                                     <option value=HN><font style=vertical-align:inherit><font style=vertical-align:inherit>Honduras</font></font>
-                                                                     <option value=HK><font style=vertical-align:inherit><font style=vertical-align:inherit>Hong Kong</font></font>
-                                                                     <option value=HU><font style=vertical-align:inherit><font style=vertical-align:inherit>Hungary</font></font>
-                                                                     <option value=YE><font style=vertical-align:inherit><font style=vertical-align:inherit>Yemen</font></font>
-                                                                     <option value=CX><font style=vertical-align:inherit><font style=vertical-align:inherit>Christmas Island</font></font>
-                                                                     <option value=IM><font style=vertical-align:inherit><font style=vertical-align:inherit>Isle of Man</font></font>
-                                                                     <option value=HM><font style=vertical-align:inherit><font style=vertical-align:inherit>Heard Island and McDonald Islands</font></font>
-                                                                     <option value=NF><font style=vertical-align:inherit><font style=vertical-align:inherit>Norfolk Island</font></font>
-                                                                     <option value=KY><font style=vertical-align:inherit><font style=vertical-align:inherit>Cayman Islands</font></font>
-                                                                     <option value=CC><font style=vertical-align:inherit><font style=vertical-align:inherit>Cocos (Keeling) Islands</font></font>
-                                                                     <option value=CK><font style=vertical-align:inherit><font style=vertical-align:inherit>Cook Islands</font></font>
-                                                                     <option value=FK><font style=vertical-align:inherit><font style=vertical-align:inherit>Falkland Islands (Malvinas)</font></font>
-                                                                     <option value=FO><font style=vertical-align:inherit><font style=vertical-align:inherit>Faroe Islands</font></font>
-                                                                     <option value=GS><font style=vertical-align:inherit><font style=vertical-align:inherit>South Georgia and the South Sandwich Islands</font></font>
-                                                                     <option value=MP><font style=vertical-align:inherit><font style=vertical-align:inherit>Northern Mariana Islands</font></font>
-                                                                     <option value=MH><font style=vertical-align:inherit><font style=vertical-align:inherit>Marshall Islands</font></font>
-                                                                     <option value=UM><font style=vertical-align:inherit><font style=vertical-align:inherit>United States Minor Outlying Islands</font></font>
-                                                                     <option value=PN><font style=vertical-align:inherit><font style=vertical-align:inherit>Pitcairn Islands</font></font>
-                                                                     <option value=SB><font style=vertical-align:inherit><font style=vertical-align:inherit>Solomon Islands</font></font>
-                                                                     <option value=TC><font style=vertical-align:inherit><font style=vertical-align:inherit>Turks and Caicos Islands</font></font>
-                                                                     <option value=VG><font style=vertical-align:inherit><font style=vertical-align:inherit>British Virgin Islands</font></font>
-                                                                     <option value=VI><font style=vertical-align:inherit><font style=vertical-align:inherit>US Virgin Islands</font></font>
-                                                                     <option value=IN><font style=vertical-align:inherit><font style=vertical-align:inherit>India</font></font>
-                                                                     <option value=ID><font style=vertical-align:inherit><font style=vertical-align:inherit>Indonesia</font></font>
-                                                                     <option value=IQ><font style=vertical-align:inherit><font style=vertical-align:inherit>Iraq</font></font>
-                                                                     <option value=IE><font style=vertical-align:inherit><font style=vertical-align:inherit>Ireland</font></font>
-                                                                     <option value=IS><font style=vertical-align:inherit><font style=vertical-align:inherit>Iceland</font></font>
-                                                                     <option value=IL><font style=vertical-align:inherit><font style=vertical-align:inherit>Israel</font></font>
-                                                                     <option value=IT><font style=vertical-align:inherit><font style=vertical-align:inherit>Italy</font></font>
-                                                                     <option value=JM><font style=vertical-align:inherit><font style=vertical-align:inherit>Jamaica</font></font>
-                                                                     <option value=JP><font style=vertical-align:inherit><font style=vertical-align:inherit>Japan</font></font>
-                                                                     <option value=JE><font style=vertical-align:inherit><font style=vertical-align:inherit>Jersey</font></font>
-                                                                     <option value=JO><font style=vertical-align:inherit><font style=vertical-align:inherit>Jordan</font></font>
-                                                                     <option value=KI><font style=vertical-align:inherit><font style=vertical-align:inherit>Kiribati</font></font>
-                                                                     <option value=XK><font style=vertical-align:inherit><font style=vertical-align:inherit>Kosovo</font></font>
-                                                                     <option value=KW><font style=vertical-align:inherit><font style=vertical-align:inherit>Kuwait</font></font>
-                                                                     <option value=LA><font style=vertical-align:inherit><font style=vertical-align:inherit>Laos</font></font>
-                                                                     <option value=LS><font style=vertical-align:inherit><font style=vertical-align:inherit>Lesotho</font></font>
-                                                                     <option value=LV><font style=vertical-align:inherit><font style=vertical-align:inherit>Latvia</font></font>
-                                                                     <option value=LR><font style=vertical-align:inherit><font style=vertical-align:inherit>Liberia</font></font>
-                                                                     <option value=LY><font style=vertical-align:inherit><font style=vertical-align:inherit>Libya</font></font>
-                                                                     <option value=LI><font style=vertical-align:inherit><font style=vertical-align:inherit>Liechtenstein</font></font>
-                                                                     <option value=LT><font style=vertical-align:inherit><font style=vertical-align:inherit>Lithuania</font></font>
-                                                                     <option value=LU><font style=vertical-align:inherit><font style=vertical-align:inherit>Luxembourg</font></font>
-                                                                     <option value=MO><font style=vertical-align:inherit><font style=vertical-align:inherit>Macao</font></font>
-                                                                     <option value=MG><font style=vertical-align:inherit><font style=vertical-align:inherit>Madagascar</font></font>
-                                                                     <option value=MY><font style=vertical-align:inherit><font style=vertical-align:inherit>Malaysia</font></font>
-                                                                     <option value=MW><font style=vertical-align:inherit><font style=vertical-align:inherit>Malawi</font></font>
-                                                                     <option value=MV><font style=vertical-align:inherit><font style=vertical-align:inherit>Maldives</font></font>
-                                                                     <option value=ML><font style=vertical-align:inherit><font style=vertical-align:inherit>Mali</font></font>
-                                                                     <option value=MT><font style=vertical-align:inherit><font style=vertical-align:inherit>Malta</font></font>
-                                                                     <option value=MA><font style=vertical-align:inherit><font style=vertical-align:inherit>Morocco</font></font>
-                                                                     <option value=MQ><font style=vertical-align:inherit><font style=vertical-align:inherit>Martinique</font></font>
-                                                                     <option value=MR><font style=vertical-align:inherit><font style=vertical-align:inherit>Mauritania</font></font>
-                                                                     <option value=MU><font style=vertical-align:inherit><font style=vertical-align:inherit>Mauritius</font></font>
-                                                                     <option value=YT><font style=vertical-align:inherit><font style=vertical-align:inherit>Mayotte</font></font>
-                                                                     <option value=MM><font style=vertical-align:inherit><font style=vertical-align:inherit>Myanmar [Burma]</font></font>
-                                                                     <option value=FM><font style=vertical-align:inherit><font style=vertical-align:inherit>Micronesia</font></font>
-                                                                     <option value=MZ><font style=vertical-align:inherit><font style=vertical-align:inherit>Mozambique</font></font>
-                                                                     <option value=MD><font style=vertical-align:inherit><font style=vertical-align:inherit>Moldova</font></font>
-                                                                     <option value=MC><font style=vertical-align:inherit><font style=vertical-align:inherit>Monaco</font></font>
-                                                                     <option value=MN><font style=vertical-align:inherit><font style=vertical-align:inherit>Mongolia</font></font>
-                                                                     <option value=ME><font style=vertical-align:inherit><font style=vertical-align:inherit>Montenegro</font></font>
-                                                                     <option value=MS><font style=vertical-align:inherit><font style=vertical-align:inherit>Montserrat</font></font>
-                                                                     <option value=NA><font style=vertical-align:inherit><font style=vertical-align:inherit>Namibia</font></font>
-                                                                     <option value=NR><font style=vertical-align:inherit><font style=vertical-align:inherit>Nauru</font></font>
-                                                                     <option value=NP><font style=vertical-align:inherit><font style=vertical-align:inherit>Nepal</font></font>
-                                                                     <option value=NI><font style=vertical-align:inherit><font style=vertical-align:inherit>Nicaragua</font></font>
-                                                                     <option value=NE><font style=vertical-align:inherit><font style=vertical-align:inherit>Niger</font></font>
-                                                                     <option value=NU><font style=vertical-align:inherit><font style=vertical-align:inherit>Niue</font></font>
-                                                                     <option value=NO><font style=vertical-align:inherit><font style=vertical-align:inherit>Norway</font></font>
-                                                                     <option value=NC><font style=vertical-align:inherit><font style=vertical-align:inherit>New Caledonia</font></font>
-                                                                     <option value=NZ><font style=vertical-align:inherit><font style=vertical-align:inherit>New Zealand</font></font>
-                                                                     <option value=OM><font style=vertical-align:inherit><font style=vertical-align:inherit>Oman</font></font>
-                                                                     <option value=PW><font style=vertical-align:inherit><font style=vertical-align:inherit>Palau</font></font>
-                                                                     <option value=PA><font style=vertical-align:inherit><font style=vertical-align:inherit>Panama</font></font>
-                                                                     <option value=PG><font style=vertical-align:inherit><font style=vertical-align:inherit>Papua New Guinea</font></font>
-                                                                     <option value=PY><font style=vertical-align:inherit><font style=vertical-align:inherit>Paraguay</font></font>
-                                                                     <option value=PE><font style=vertical-align:inherit><font style=vertical-align:inherit>Peru</font></font>
-                                                                     <option value=PF><font style=vertical-align:inherit><font style=vertical-align:inherit>French Polynesia</font></font>
-                                                                     <option value=PL><font style=vertical-align:inherit><font style=vertical-align:inherit>Poland</font></font>
-                                                                     <option value=PR><font style=vertical-align:inherit><font style=vertical-align:inherit>Puerto Rico</font></font>
-                                                                     <option value=PT><font style=vertical-align:inherit><font style=vertical-align:inherit>Portugal</font></font>
-                                                                     <option value=QA><font style=vertical-align:inherit><font style=vertical-align:inherit>Qatar</font></font>
-                                                                     <option value=KE><font style=vertical-align:inherit><font style=vertical-align:inherit>Kenya</font></font>
-                                                                     <option value=KG><font style=vertical-align:inherit><font style=vertical-align:inherit>Kyrgyzstan</font></font>
-                                                                     <option value=CF><font style=vertical-align:inherit><font style=vertical-align:inherit>Central African Republic</font></font>
-                                                                     <option value=DO><font style=vertical-align:inherit><font style=vertical-align:inherit>Dominican Republic</font></font>
-                                                                     <option value=CZ><font style=vertical-align:inherit><font style=vertical-align:inherit>Czech Republic</font></font>
-                                                                     <option value=RE><font style=vertical-align:inherit><font style=vertical-align:inherit>Meeting</font></font>
-                                                                     <option value=RO><font style=vertical-align:inherit><font style=vertical-align:inherit>Romania</font></font>
-                                                                     <option value=RW><font style=vertical-align:inherit><font style=vertical-align:inherit>Rwanda</font></font>
-                                                                     <option value=EH><font style=vertical-align:inherit><font style=vertical-align:inherit>Western Sahara</font></font>
-                                                                     <option value=WS><font style=vertical-align:inherit><font style=vertical-align:inherit>Samoa</font></font>
-                                                                     <option value=AS><font style=vertical-align:inherit><font style=vertical-align:inherit>American Samoa</font></font>
-                                                                     <option value=SM><font style=vertical-align:inherit><font style=vertical-align:inherit>San Marino</font></font>
-                                                                     <option value=SH><font style=vertical-align:inherit><font style=vertical-align:inherit>Saint Helena</font></font>
-                                                                     <option value=LC><font style=vertical-align:inherit><font style=vertical-align:inherit>Saint Lucia</font></font>
-                                                                     <option value=KN><font style=vertical-align:inherit><font style=vertical-align:inherit>Saint Kitts and Nevis</font></font>
-                                                                     <option value=PM><font style=vertical-align:inherit><font style=vertical-align:inherit>Saint Pierre and Miquelon</font></font>
-                                                                     <option value=ST><font style=vertical-align:inherit><font style=vertical-align:inherit>Sao Tome and Principe</font></font>
-                                                                     <option value=VC><font style=vertical-align:inherit><font style=vertical-align:inherit>Saint Vincent and the Grenadines</font></font>
-                                                                     <option value=SN><font style=vertical-align:inherit><font style=vertical-align:inherit>Senegal</font></font>
-                                                                     <option value=SL><font style=vertical-align:inherit><font style=vertical-align:inherit>Sierra Leone</font></font>
-                                                                     <option value=RS><font style=vertical-align:inherit><font style=vertical-align:inherit>Serbia</font></font>
-                                                                     <option value=SC><font style=vertical-align:inherit><font style=vertical-align:inherit>Seychelles</font></font>
-                                                                     <option value=SO><font style=vertical-align:inherit><font style=vertical-align:inherit>Somalia</font></font>
-                                                                     <option value=LK><font style=vertical-align:inherit><font style=vertical-align:inherit>Sri Lanka</font></font>
-                                                                     <option value=SZ><font style=vertical-align:inherit><font style=vertical-align:inherit>Swaziland</font></font>
-                                                                     <option value=SE><font style=vertical-align:inherit><font style=vertical-align:inherit>Sweden</font></font>
-                                                                     <option value=CH><font style=vertical-align:inherit><font style=vertical-align:inherit>Switzerland</font></font>
-                                                                     <option value=SR><font style=vertical-align:inherit><font style=vertical-align:inherit>Suriname</font></font>
-                                                                     <option value=SJ><font style=vertical-align:inherit><font style=vertical-align:inherit>Svalbard and Jan Mayen</font></font>
-                                                                     <option value=TH><font style=vertical-align:inherit><font style=vertical-align:inherit>Thailand</font></font>
-                                                                     <option value=TW><font style=vertical-align:inherit><font style=vertical-align:inherit>Taiwan</font></font>
-                                                                     <option value=TJ><font style=vertical-align:inherit><font style=vertical-align:inherit>Tajikistan</font></font>
-                                                                     <option value=TZ><font style=vertical-align:inherit><font style=vertical-align:inherit>Tanzania</font></font>
-                                                                     <option value=IO><font style=vertical-align:inherit><font style=vertical-align:inherit>British Indian Ocean Territory</font></font>
-                                                                     <option value=TL><font style=vertical-align:inherit><font style=vertical-align:inherit>East Timor</font></font>
-                                                                     <option value=TG><font style=vertical-align:inherit><font style=vertical-align:inherit>Togo</font></font>
-                                                                     <option value=TK><font style=vertical-align:inherit><font style=vertical-align:inherit>Tokelau</font></font>
-                                                                     <option value=TO><font style=vertical-align:inherit><font style=vertical-align:inherit>Tonga</font></font>
-                                                                     <option value=TT><font style=vertical-align:inherit><font style=vertical-align:inherit>Trinidad and Tobago</font></font>
-                                                                     <option value=TN><font style=vertical-align:inherit><font style=vertical-align:inherit>Tunisia</font></font>
-                                                                     <option value=TM><font style=vertical-align:inherit><font style=vertical-align:inherit>Turkmenistan</font></font>
-                                                                     <option value=TR><font style=vertical-align:inherit><font style=vertical-align:inherit>Türkiye</font></font>
-                                                                     <option value=TV><font style=vertical-align:inherit><font style=vertical-align:inherit>Tuvalu</font></font>
-                                                                     <option value=UG><font style=vertical-align:inherit><font style=vertical-align:inherit>Uganda</font></font>
-                                                                     <option value=UY><font style=vertical-align:inherit><font style=vertical-align:inherit>Uruguay</font></font>
-                                                                     <option value=UZ><font style=vertical-align:inherit><font style=vertical-align:inherit>Uzbekistan</font></font>
-                                                                     <option value=VU><font style=vertical-align:inherit><font style=vertical-align:inherit>Vanuatu</font></font>
-                                                                     <option value=VE><font style=vertical-align:inherit><font style=vertical-align:inherit>Venezuela</font></font>
-                                                                     <option value=VN><font style=vertical-align:inherit><font style=vertical-align:inherit>Vietnam</font></font>
-                                                                     <option value=WF><font style=vertical-align:inherit><font style=vertical-align:inherit>Wallis and Futuna</font></font>
-                                                                     <option value=ZM><font style=vertical-align:inherit><font style=vertical-align:inherit>Zambia</font></font>
-                                                                     <option value=ZW><font style=vertical-align:inherit><font style=vertical-align:inherit>Zimbabwe</font></font>
-                              </select>
-                                <label
-                                  class="hrt-select-field-label"
-                                  for="location-country"
-                                >
-                                  Country
-                                </label>
-                                <svg
-                                  aria-hidden="true"
-                                  class="hrt-select-field-icon hrt-icon hrt-icon--large"
-                                  focusable="false"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <use href="#chevron-down"></use>
-                                  <symbol
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    id="chevron-down"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                  >
-                                    <path
-                                      d="M12 16.75a.739.739 0 0 1-.53-.22l-8-8a.75.75 0 0 1 1.06-1.06L12 14.94l7.47-7.47a.75.75 0 0 1 1.06 1.06l-8 8a.74.74 0 0 1-.53.22Z"
-                                      fill="currentColor"
-                                    ></path>
-                                  </symbol>
-                                </svg>
-                              </div>
-                            </div>
-                            <!-- Error message below Country -->
-                            <div class="error-message" id="country-error">
-                              <img src="error.svg" alt="" class="error-icon" />
-                              <span></span>
-                            </div>
-                          </div>
-                          <div
-                            class="short-address-fields_donationLocationRow__hnPH_"
-                            bis_skin_checked="1"
-                          >
-                            <div class="hrt-text-field" bis_skin_checked="1">
-                              <div
-                                class="hrt-text-field-wrapper"
-                                bis_skin_checked="1"
-                              >
-                                <div
-                                  class="hrt-text-field-inner"
-                                  bis_skin_checked="1"
-                                >
-                                  <input
-                                    aria-invalid="false"
-                                    class="hrt-text-field-input"
-                                    id="location-postal-code"
-                                    placeholder=" "
-                                    name="postalCode"
-                                    type="text"
-                                    layout="stacked"
-                                    value=""
-                                  />
-                                  <label
-                                    class="hrt-text-field-label"
-                                    for="location-postal-code"
-                                  >
-                                    Postal code
-                                  </label>
-                                </div>
-                              </div>
-                              <!-- Error message below Postal Code -->
-                              <div class="error-message" id="postal-code-error">
-                                <img src="error.svg" alt="" class="error-icon" />
-                                <span></span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- (Removed hidden fields for Redsys operation ID since we do redirect method) -->
-                    </div>
-                  </div>
-                </div>
+                <!-- (Removed personal info fields for email/name/country/zip) -->
 
                 <!-- Donation summary area -->
                 <div class="hrt-mb-4 hrt-mb-3 checkout-summary" bis_skin_checked="1">
@@ -1359,132 +897,7 @@
                   })();
                 </script>
 
-                <!-- Simple validation for the normal text fields -->
-                <script>
-                  document.addEventListener("DOMContentLoaded", function () {
-                    function showErrorMessage(inputId, errorId, message) {
-                      const errorDiv = document.getElementById(errorId);
-                      const inputEl = document.getElementById(inputId);
-                      if (!inputEl) return;
-
-                      const wrapper = inputEl.closest(".hrt-text-field-wrapper") ||
-                                      inputEl.closest(".hrt-select-field-wrapper");
-                      if (!wrapper) return;
-
-                      if (message) {
-                        errorDiv.classList.add("active");
-                        errorDiv.querySelector("span").textContent = message;
-                        wrapper.classList.add("field-error");
-                      } else {
-                        errorDiv.classList.remove("active");
-                        errorDiv.querySelector("span").textContent = "";
-                        wrapper.classList.remove("field-error");
-                      }
-                    }
-
-                    function validateEmail(email) {
-                      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                      return re.test(email);
-                    }
-
-                    // Email
-                    const emailInput = document.getElementById("email-address");
-                    function validateEmailField() {
-                      const value = emailInput.value.trim();
-                      if (!value) {
-                        showErrorMessage(
-                          "email-address",
-                          "email-error",
-                          "Please enter your email address"
-                        );
-                      } else if (!validateEmail(value)) {
-                        showErrorMessage(
-                          "email-address",
-                          "email-error",
-                          "Invalid email address"
-                        );
-                      } else {
-                        showErrorMessage("email-address", "email-error", "");
-                      }
-                    }
-                    emailInput.addEventListener("blur", validateEmailField);
-                    emailInput.addEventListener("input", validateEmailField);
-
-                    // First Name
-                    const firstNameInput = document.getElementById("first-name");
-                    function validateFirstNameField() {
-                      const value = firstNameInput.value.trim();
-                      if (!value) {
-                        showErrorMessage(
-                          "first-name",
-                          "first-name-error",
-                          "Please enter your first name"
-                        );
-                      } else {
-                        showErrorMessage("first-name", "first-name-error", "");
-                      }
-                    }
-                    firstNameInput.addEventListener("blur", validateFirstNameField);
-                    firstNameInput.addEventListener("input", validateFirstNameField);
-
-                    // Last Name
-                    const lastNameInput = document.getElementById("last-name");
-                    function validateLastNameField() {
-                      const value = lastNameInput.value.trim();
-                      if (!value) {
-                        showErrorMessage(
-                          "last-name",
-                          "last-name-error",
-                          "Please enter your last name"
-                        );
-                      } else {
-                        showErrorMessage("last-name", "last-name-error", "");
-                      }
-                    }
-                    lastNameInput.addEventListener("blur", validateLastNameField);
-                    lastNameInput.addEventListener("input", validateLastNameField);
-
-                    // Country
-                    const countrySelect = document.getElementById("location-country");
-                    function validateCountryField() {
-                      const value = countrySelect.value.trim();
-                      if (!value) {
-                        showErrorMessage(
-                          "location-country",
-                          "country-error",
-                          "Please select a country"
-                        );
-                      } else {
-                        showErrorMessage("location-country", "country-error", "");
-                      }
-                    }
-                    countrySelect.addEventListener("blur", validateCountryField);
-                    countrySelect.addEventListener("change", validateCountryField);
-
-                    // Postal Code
-                    const postalCodeInput = document.getElementById("location-postal-code");
-                    function validatePostalCodeField() {
-                      const value = postalCodeInput.value.trim();
-                      if (!value) {
-                        showErrorMessage(
-                          "location-postal-code",
-                          "postal-code-error",
-                          "Please enter your postal code"
-                        );
-                      } else {
-                        showErrorMessage(
-                          "location-postal-code",
-                          "postal-code-error",
-                          ""
-                        );
-                      }
-                    }
-                    postalCodeInput.addEventListener("blur", validatePostalCodeField);
-                    postalCodeInput.addEventListener("input", validatePostalCodeField);
-                  });
-                </script>
-
-                <!-- Script to handle Donate Now button -->
+                <!-- Donate Button Logic -->
                 <script>
                   document.addEventListener("DOMContentLoaded", function () {
                     // Reusable function to show a global error under the Donate button
@@ -1503,23 +916,9 @@
                       }
                     }
 
-                    // Validate all fields at once
+                    // Validate only if an amount is selected
                     function validateAllFields() {
-                      // Force the blur event on each field to trigger field-level validation
-                      document.getElementById("email-address").dispatchEvent(new Event("blur"));
-                      document.getElementById("first-name").dispatchEvent(new Event("blur"));
-                      document.getElementById("last-name").dispatchEvent(new Event("blur"));
-                      document.getElementById("location-country").dispatchEvent(new Event("blur"));
-                      document.getElementById("location-postal-code").dispatchEvent(new Event("blur"));
-
-                      // Check if any error classes are still active
-                      const emailErrorActive = document.getElementById("email-error").classList.contains("active");
-                      const firstNameErrorActive = document.getElementById("first-name-error").classList.contains("active");
-                      const lastNameErrorActive = document.getElementById("last-name-error").classList.contains("active");
-                      const countryErrorActive = document.getElementById("country-error").classList.contains("active");
-                      const postalCodeErrorActive = document.getElementById("postal-code-error").classList.contains("active");
-
-                      // Check if user selected a donation amount
+                      // Check which donation button is pressed
                       let selectedAmount = "0";
                       const pressedBtn = document.querySelector(
                         'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
@@ -1528,51 +927,25 @@
                         selectedAmount = pressedBtn.value;
                       }
 
-                      // Check if fields are empty or errors are active
-                      const emailVal = document.getElementById("email-address").value.trim();
-                      const firstVal = document.getElementById("first-name").value.trim();
-                      const lastVal = document.getElementById("last-name").value.trim();
-                      const countryVal = document.getElementById("location-country").value.trim();
-                      const postalVal = document.getElementById("location-postal-code").value.trim();
-
-                      if (
-                        !emailVal ||
-                        !firstVal ||
-                        !lastVal ||
-                        !countryVal ||
-                        !postalVal ||
-                        selectedAmount === "0" ||
-                        emailErrorActive ||
-                        firstNameErrorActive ||
-                        lastNameErrorActive ||
-                        countryErrorActive ||
-                        postalCodeErrorActive
-                      ) {
-                        showGlobalError("Please fill out all required fields and select a donation amount.");
+                      // If no amount was selected, show error
+                      if (selectedAmount === "0") {
+                        showGlobalError("Please select a donation amount.");
                         return false;
                       }
 
-                      // All good
+                      // If we get here, amount is selected
                       showGlobalError(""); // Clear any global error
                       return true;
                     }
 
                     const donateNowBtn = document.getElementById("donate-now");
                     donateNowBtn.addEventListener("click", async function () {
-                      // Step 1: Validate all fields
+                      // Step 1: Validate (only donation amount needed)
                       if (!validateAllFields()) {
-                        // If validation fails, do NOT proceed
                         return;
                       }
 
-                      // If we get here, fields are valid
-                      const email = document.getElementById("email-address").value.trim();
-                      const firstName = document.getElementById("first-name").value.trim();
-                      const lastName = document.getElementById("last-name").value.trim();
-                      const country = document.getElementById("location-country").value.trim();
-                      const postalCode = document.getElementById("location-postal-code").value.trim();
-
-                      // Figure out which donation button is pressed
+                      // Get the selected amount
                       let selectedAmount = "0";
                       const pressedBtn = document.querySelector(
                         'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
@@ -1584,13 +957,8 @@
                       // Use the global BACKEND_URL from the <script> in the <head>
                       const baseUrl = window.BACKEND_URL || "";
 
-                      // Prepare data to send to the server
+                      // Only send amount to the server
                       const dataToStore = {
-                        email,
-                        firstName,
-                        lastName,
-                        country,
-                        postalCode,
                         amount: selectedAmount,
                       };
 
@@ -1620,7 +988,7 @@
                     });
                   });
                 </script>
-                <!-- (Removed the old embedded Redsys inSite scripts) -->
+                <!-- (Removed inSite scripts, personal info fields, and their validations) -->
               </div>
             </div>
           </div>
