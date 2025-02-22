@@ -84,7 +84,9 @@ app.post('/create-donation', (req, res, next) => {
     // Store donor data
     const donor = { amount, firstName, lastName, email, orderId };
     res.cookie(`donor_${orderId}`, JSON.stringify(donor), {
-      maxAge: 30 * 60 * 1000 // 30 minutes
+      maxAge: 30 * 60 * 1000, // 30 minutes
+      sameSite: 'none',       // Allow cross-site requests
+      secure: true            // Must be true for SameSite 'none'
     });
 
     return res.json({ ok: true, orderId });
@@ -93,7 +95,6 @@ app.post('/create-donation', (req, res, next) => {
     next(err);
   }
 });
-
 
 app.get('/iframe-sis', (req, res, next) => {
   try {
@@ -151,14 +152,12 @@ app.get('/iframe-sis', (req, res, next) => {
   }
 });
 
-
 app.post('/redsys-notification', (req, res, next) => {
   try {
     const result = processRedirectNotification(req.body);
     const responseCode = parseInt(result.Ds_Response || '9999', 10);
     if (responseCode < 100) {
       console.log('Payment SUCCESS, order:', result.Ds_Order);
-      
       return res.send('OK'); 
     } else {
       console.log('Payment FAILED, order:', result.Ds_Order, 'code:', responseCode);
@@ -170,12 +169,10 @@ app.post('/redsys-notification', (req, res, next) => {
   }
 });
 
-
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ ok: false, error: 'Internal Server Error' });
 });
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
