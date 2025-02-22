@@ -74,15 +74,21 @@ app.get('/', (req, res, next) => {
 // Endpoint to create a donation and store donor info in a cookie
 app.post('/create-donation', (req, res, next) => {
   try {
-    const { amount, firstName, lastName, email } = req.body;
-    if (!amount || !firstName || !lastName || !email) {
-      return res.status(400).json({ ok: false, error: 'Missing fields.' });
+    const { amount } = req.body;
+    if (!amount) {
+      return res.status(400).json({ ok: false, error: 'Missing amount.' });
     }
     // Generate a unique order ID
     const orderId = randomTransactionId();
 
-    // Store donor data
-    const donor = { amount, firstName, lastName, email, orderId };
+    // Use default donor values since only amount is provided
+    const donor = { 
+      amount, 
+      firstName: 'Anonymous', 
+      lastName: 'Donor', 
+      email: 'anonymous@example.com', 
+      orderId 
+    };
     res.cookie(`donor_${orderId}`, JSON.stringify(donor), {
       maxAge: 30 * 60 * 1000, // 30 minutes
       sameSite: 'none',       // Allow cross-site requests
@@ -96,6 +102,7 @@ app.post('/create-donation', (req, res, next) => {
   }
 });
 
+// Endpoint to initiate Redsys payment via an iframe redirect
 app.get('/iframe-sis', (req, res, next) => {
   try {
     const { orderId } = req.query;
@@ -110,7 +117,7 @@ app.get('/iframe-sis', (req, res, next) => {
     const donor = JSON.parse(donorCookie);
 
     // Convert amount to cents
-    const dsAmount = (parseInt(donor.amount, 10) * 100).toString();
+    const dsAmount = (parseFloat(donor.amount) * 100).toFixed(0);
 
     const params = {
       DS_MERCHANT_MERCHANTCODE: MERCHANT_CODE,
@@ -152,6 +159,7 @@ app.get('/iframe-sis', (req, res, next) => {
   }
 });
 
+// Redsys payment notification endpoint
 app.post('/redsys-notification', (req, res, next) => {
   try {
     const result = processRedirectNotification(req.body);
@@ -169,12 +177,14 @@ app.post('/redsys-notification', (req, res, next) => {
   }
 });
 
+// Global error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ ok: false, error: 'Internal Server Error' });
 });
 
+// Start the server on the specified PORT or 3000
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running at https://fbcid-production.up.railway.app on port ${PORT}`);
 });
