@@ -7,6 +7,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
 
 // Redsys easy - using production URLs now
 const {
@@ -31,8 +32,28 @@ const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
   urls: PRODUCTION_URLS
 });
 
-// In-memory store for donation data (this replaces cookies)
-const donations = {};
+// ===================
+// DATABASE SETUP
+// ===================
+const db = new sqlite3.Database('./donations.db', (err) => {
+  if (err) {
+    console.error('Error opening database:', err.message);
+  } else {
+    console.log('Connected to SQLite database.');
+  }
+});
+
+// Create the donations table if it doesn't exist
+db.run(`
+  CREATE TABLE IF NOT EXISTS donations (
+    orderId TEXT PRIMARY KEY,
+    amount REAL
+  )
+`, (err) => {
+  if (err) {
+    console.error('Error creating donations table:', err.message);
+  }
+});
 
 // ===================
 // APP SETUP
@@ -64,39 +85,41 @@ app.get('/', (req, res, next) => {
   }
 });
 
-// Endpoint to create a donation and store donor data in memory (only "amount" is required)
+// Endpoint to create a donation and store donor data in SQLite (only "amount" is required)
 app.post('/create-donation', (req, res, next) => {
-  try {
-    const { amount } = req.body;
-    if (!amount) {
-      return res.status(400).json({ ok: false, error: 'Missing amount.' });
-    }
-    // Generate a unique order ID
-    const orderId = randomTransactionId();
-    // Store donation data in memory
-    donations[orderId] = { amount };
-    return res.json({ ok: true, orderId });
-  } catch (err) {
-    console.error('Error in /create-donation:', err);
-    next(err);
+  const { amount } = req.body;
+  if (!amount) {
+    return res.status(400).json({ ok: false, error: 'Missing amount.' });
   }
+  // Generate a unique order ID
+  const orderId = randomTransactionId();
+  // Insert donation data into SQLite
+  db.run('INSERT INTO donations (orderId, amount) VALUES (?, ?)', [orderId, amount], function(err) {
+    if (err) {
+      console.error('Error inserting donation:', err.message);
+      return res.status(500).json({ ok: false, error: 'Database error.' });
+    }
+    return res.json({ ok: true, orderId });
+  });
 });
 
 // Endpoint to initiate Redsys payment via an iframe redirect
 app.get('/iframe-sis', (req, res, next) => {
-  try {
-    const { orderId } = req.query;
-    if (!orderId) {
-      return res.status(400).send('<h1>Error: missing orderId param</h1>');
+  const { orderId } = req.query;
+  if (!orderId) {
+    return res.status(400).send('<h1>Error: missing orderId param</h1>');
+  }
+  // Retrieve donation data from SQLite
+  db.get('SELECT * FROM donations WHERE orderId = ?', [orderId], (err, row) => {
+    if (err) {
+      console.error('Database error:', err.message);
+      return res.status(500).send('<h1>Error: database error</h1>');
     }
-    // Retrieve donation data from the in-memory store
-    const donation = donations[orderId];
-    if (!donation) {
+    if (!row) {
       return res.status(404).send('<h1>Error: no matching donor data</h1>');
     }
     // Convert amount to cents (Redsys expects an integer value in cents)
-    const dsAmount = (parseFloat(donation.amount) * 100).toFixed(0);
-
+    const dsAmount = (parseFloat(row.amount) * 100).toFixed(0);
     const params = {
       DS_MERCHANT_MERCHANTCODE: MERCHANT_CODE,
       DS_MERCHANT_TERMINAL: TERMINAL,
@@ -110,7 +133,6 @@ app.get('/iframe-sis', (req, res, next) => {
       DS_MERCHANT_URLOK: MERCHANT_URLOK,
       DS_MERCHANT_URLKO: MERCHANT_URLKO
     };
-
     const form = createRedirectForm(params);
     const html = `
       <!DOCTYPE html>
@@ -130,10 +152,7 @@ app.get('/iframe-sis', (req, res, next) => {
       </html>
     `;
     res.send(html);
-  } catch (err) {
-    console.error('Error in /iframe-sis:', err);
-    next(err);
-  }
+  });
 });
 
 // Redsys payment notification endpoint
