@@ -5,15 +5,9 @@
 // Required libraries and modules
 const express = require('express');
 const bodyParser = require('body-parser');
-// Note: You can remove the separate cors import if you’re using the custom middleware below.
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
-
-const {
-  createRedsysAPI,
-  PRODUCTION_URLS,
-  randomTransactionId
-} = require('redsys-easy');
+const { createRedsysAPI, PRODUCTION_URLS, randomTransactionId } = require('redsys-easy');
 
 // **** Production configuration ****
 const MERCHANT_CODE = '367149531';
@@ -63,16 +57,20 @@ const app = express();
 
 // Custom CORS middleware to set headers on every response
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*'); // Allow any origin
+  // Allow requests from any origin
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Allow specific HTTP methods
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Allow headers
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin, X-Requested-With, Accept');
+  
+  // If this is a preflight request, respond immediately
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200); // Respond to preflight requests immediately
+    return res.sendStatus(200);
   }
   next();
 });
 
-// Parse incoming request bodies
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'views')));
