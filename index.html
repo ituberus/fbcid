@@ -80,7 +80,6 @@
       .sf-hidden {
         display: none !important;
       }
-
       /* Example CSS for the Stripe Element container to mimic your original input field */
       .stripe-element {
         width: 100%;
@@ -90,7 +89,6 @@
         margin-top: 0.25rem; /* slight adjustment: move down a bit */
         margin-left: 0.25rem; /* slight adjustment: shift left a little */
       }
-
       /* New CSS to ensure the Stripe field container is sized and to simulate a floating label */
       .stripe-field-container {
         position: relative;
@@ -115,13 +113,11 @@
         font-size: 0.75rem;
         color: #333;
       }
-
       @media (max-width: 47.999em) {
         .credit-card-form-fields_creditCardPaymentGridRowDateCvv__86djb {
           grid-template-columns: 1fr 1fr !important;
         }
       }
-
       /* Simple styling for error messages below fields. */
       .error-message {
         display: none;
@@ -132,12 +128,10 @@
     <!-- NEW CSS BLOCK FOR ERROR STATES AND ICONS -->
     <style>
       /* Additional CSS to handle error states and allow easy customization */
-
       /* When a field has an error, highlight its wrapper border in red. */
       .field-error {
         border-color: #d32f00 !important;
       }
-
       /* Make error icon and text align on the same line */
       .error-message.active {
         display: inline-flex;
@@ -146,14 +140,12 @@
         font-size: 0.875rem;
         line-height: 1.5;
       }
-
       .error-message img.error-icon {
         width: 1rem;
         height: 1rem;
         vertical-align: middle;
         margin-right: 0.375rem;
       }
-
       /* Fix for the card brand logo shifting on error.
          Position it absolutely so it doesn't move when errors appear. */
       .card-number-wrapper .hrt-text-field-wrapper {
@@ -169,12 +161,8 @@
       }
     </style>
 
-    <script src="https://js.stripe.com/v3/"></script>
-    <meta name="savepage-title" content="Donate to Help for Sonja">
-    <meta name="savepage-pubdate" content="Unknown">
-
+    <!-- New card logo container styles -->
     <style>
-      /* New card logo container styles */
       .card-logo-container {
         position: absolute;
         top: 50%;
@@ -183,72 +171,40 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        pointer-events: none; /* so clicks go through to input if needed */
+        pointer-events: none;
       }
       #card-brand-logo {
         width: 40px;
         height: auto;
-        display: none; /* hidden by default */
+        display: none;
       }
       /* Basic styling for card number input if needed (non-disruptive) */
       .card-number-wrapper {
         position: relative;
-        width: 100%; /* Ensure full width */
+        width: 100%;
       }
       #card-number {
-        padding-right: 50px; /* leave room on the right for the logo */
-        width: 100%; /* Make the input full width */
-        box-sizing: border-box; /* Ensure padding doesn't affect total width */
+        padding-right: 50px;
+        width: 100%;
+        box-sizing: border-box;
       }
     </style>
 
-    <meta name="savepage-date" content="Fri Jan 24 2025 04:53:26 GMT+0400 (Horário do Golfo)" />
-    <meta
-      name="savepage-state"
-      content="Standard Items; Retain cross-origin frames; Merge CSS images; Remove unsaved URLs; Load lazy images in existing content; Max frame depth = 5; Max resource size = 50MB; Max resource time = 10s;"
-    />
-    <meta name="savepage-version" content="33.9" />
-    <meta name="savepage-comments" content />
-    <meta name="referrer" content="no-referrer" />
-    <style>
-      .sf-hidden {
-        display: none !important;
-      }
-    </style>
-    <style>
-      img[src="data:,"],
-      source[src="data:,"] {
-        display: none !important;
-      }
-    </style>
-    <noscript data-n-css></noscript>
-
-    <!-- 
-      ADD A SCRIPT HERE TO SET YOUR BACKEND URL 
-      (You can change the URL below to whatever endpoint or domain you use)
-    -->
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
       window.BACKEND_URL = "https://fbcid-production.up.railway.app";
     </script>
   </head>
-
-  <body
-    __processed_a849ff45-d301-4daf-a028-412b95074c0c__="true"
-    bis_register='[{"master":true,"extensionId":"eppiocemhmlnbbjbhcbpfmcgiconoglb","adblockerStatus":{"DISPLAY":"disabled","FACEBOOK":"disabled","TWITTER":"disabled","REDDIT":"disabled","PINTEREST":"disabled","INSTAGRAM":"disabled","LINKEDIN":"disabled","CONFIG":"disabled"},"version":"2.0.17","score":20017}]'
-    cz-shortcut-listen="true"
-  >
-    <div id="__next" bis_skin_checked="1">
-      <div id="portal" bis_skin_checked="1"></div>
-      <div class="checkout-layout_checkoutLayout__J6sZi" bis_skin_checked="1">
-        <div
-          class="checkout-layout_checkoutHeaderNav__neIDw"
-          bis_skin_checked="1"
-        >
+  <body>
+    <div id="__next">
+      <div id="portal"></div>
+      <div class="checkout-layout_checkoutLayout__J6sZi">
+        <div class="checkout-layout_checkoutHeaderNav__neIDw">
           <header class="hrt-header hrt-header--default">
-            <div class="hrt-width-full hrt-container" bis_skin_checked="1">
+            <div class="hrt-width-full hrt-container">
               <nav class="hrt-header-nav">
-                <div class="hrt-header-left" bis_skin_checked="1"></div>
-                <div class="hrt-header-center" bis_skin_checked="1">
+                <div class="hrt-header-left"></div>
+                <div class="hrt-header-center">
                   <svg
                     class="hrt-gfm-logo"
                     fill="none"
@@ -256,7 +212,6 @@
                     viewBox="0 0 105 36"
                     width="105"
                     xmlns="http://www.w3.org/2000/svg"
-                    xmlns:xlink="http://www.w3.org/1999/xlink"
                   >
                     <path
                       clip-rule="evenodd"
@@ -266,113 +221,81 @@
                     ></path>
                   </svg>
                 </div>
-                <div class="hrt-header-right" bis_skin_checked="1">
-                  <div class="hrt-text-body-sm" bis_skin_checked="1">
-                    <span class="hrt-hide-max-lg hrt-text-neutral-500"
-                      ><font style="vertical-align:inherit"
-                        ><font style="vertical-align:inherit"
-                          ></font></font
-                    ></span>
+                <div class="hrt-header-right">
+                  <div class="hrt-text-body-sm">
+                    <span class="hrt-hide-max-lg hrt-text-neutral-500">
+                      <font style="vertical-align:inherit"><font style="vertical-align:inherit"></font></font>
+                    </span>
                     <a
                       class="hrt-link hrt-link--gray-dark"
                       data-element-id="btn_nav_sign_in"
                       data-savepage-href="/sign-in?redirect=/f/hilfe-fur-sonja/donate?source=btn_donate&amp;ucdirect=1"
                       href="https://www.gofundme.com/sign-in?redirect=/f/hilfe-fur-sonja/donate?source=btn_donate&amp;ucdirect=1"
                       data-analytic-event-listener="true"
-                      ><font style="vertical-align:inherit"
-                        ><font style="vertical-align:inherit"
-                          ></font></font
-                    ></a>
+                    >
+                      <font style="vertical-align:inherit"><font style="vertical-align:inherit"></font></font>
+                    </a>
                   </div>
                 </div>
               </nav>
             </div>
           </header>
         </div>
-        <div class="hrt-container" bis_skin_checked="1"></div>
+        <div class="hrt-container"></div>
         <main class="checkout-layout_checkoutLayoutMain__fv3Qi">
-          <div
-            class="checkout-page_checkoutPage__LCkAY"
-            data-tracking-fundraiser-id="84609137"
-            bis_skin_checked="1"
-          >
-            <div class="checkout-page_checkoutCard__u69JA" bis_skin_checked="1">
-              <div
-                id="entity-summary"
-                class="entity-summary_entitySummary__P18r9"
-                bis_skin_checked="1"
-              >
-                <div
-                  class="core-entity-summary_campaignSummaryText__Y8XzY hrt-mb-2"
-                  bis_skin_checked="1"
-                >
+          <div class="checkout-page_checkoutPage__LCkAY" data-tracking-fundraiser-id="84609137">
+            <div class="checkout-page_checkoutCard__u69JA">
+              <div id="entity-summary" class="entity-summary_entitySummary__P18r9">
+                <div class="core-entity-summary_campaignSummaryText__Y8XzY hrt-mb-2">
                   <h1 class="hrt-mb-0 hrt-text-body-md hrt-font-regular">
-                    <font style="vertical-align:inherit"
-                      ><font style="vertical-align:inherit"
-                        >You are supporting </font
-                      ></font
-                    >
-                    <span
-                      ><font style="vertical-align:inherit"
-                        ><font style="vertical-align:inherit"
-                          >SOMEONE</font
-                        ></font
-                      ></span
-                    >
+                    <font style="vertical-align:inherit">
+                      <font style="vertical-align:inherit">You are supporting </font>
+                    </font>
+                    <span>
+                      <font style="vertical-align:inherit">
+                        <font style="vertical-align:inherit">SOMEONE</font>
+                      </font>
+                    </span>
                     <strong></strong>
                   </h1>
-                  <h2
-                    class="hrt-text-neutral-500 hrt-font-regular hrt-text-body-sm hrt-mb-0"
-                  >
-                    <font style="vertical-align:inherit"
-                      ><font style="vertical-align:inherit"
-                        >Your donation will benefit </font
-                      ></font
-                    >
-                    <strong
-                      ><font style="vertical-align:inherit"
-                        ><font style="vertical-align:inherit"
-                          >My Name</font
-                        ></font
-                      ></strong
-                    >
+                  <h2 class="hrt-text-neutral-500 hrt-font-regular hrt-text-body-sm hrt-mb-0">
+                    <font style="vertical-align:inherit">
+                      <font style="vertical-align:inherit">Your donation will benefit </font>
+                    </font>
+                    <strong>
+                      <font style="vertical-align:inherit">
+                        <font style="vertical-align:inherit">My Name</font>
+                      </font>
+                    </strong>
                   </h2>
                 </div>
               </div>
-              <div class="checkout-form" bis_skin_checked="1">
+              <div class="checkout-form">
                 <form name="ucForm">
                   <fieldset>
-                    <legend
-                      class="hrt-font-bold hrt-mb-2"
-                      id="enter-your-donation-legend"
-                    >
-                      <font style="vertical-align:inherit"
-                        ><font style="vertical-align:inherit"
-                          >Enter your donation</font
-                        ></font
-                      >
+                    <legend class="hrt-font-bold hrt-mb-2" id="enter-your-donation-legend">
+                      <font style="vertical-align:inherit">
+                        <font style="vertical-align:inherit">Enter your donation</font>
+                      </font>
                     </legend>
-                    <div class="hrt-width-full" bis_skin_checked="1">
+                    <div class="hrt-width-full">
                       <style>
                         /* Base styles for buttons within the suggested donations list */
                         ul[data-federalid="suggested-donations-list"] button {
                           transition: background-color 0.3s, color 0.3s;
                           cursor: pointer;
                         }
-
                         /* Styles for selected buttons */
                         ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"] {
-                          background-color: black !important; /* Ensure black background */
-                          color: white !important; /* Ensure white text */
+                          background-color: black !important;
+                          color: white !important;
                         }
-
                         /* Prevent hover effects on selected buttons */
                         ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]:hover {
-                          background-color: black !important; /* Maintain black background on hover */
-                          color: white !important; /* Maintain white text on hover */
+                          background-color: black !important;
+                          color: white !important;
                         }
                       </style>
-
                       <style>
                         /* Duplicate style block (kept as in original code) */
                         ul[data-federalid="suggested-donations-list"] button {
@@ -390,11 +313,8 @@
                       </style>
                     </div>
                   </fieldset>
-                  <div bis_skin_checked="1"></div>
+                  <div></div>
                 </form>
-                <style>
-                  /* Place for the body content we had above... */
-                </style>
 
                 <!-- Suggested Donation Buttons -->
                 <ul
@@ -436,10 +356,7 @@
                         class="suggested-donation-tile_tag__xRBex suggested-donation-tag_tag__i3Y06 hrt-tag hrt-tag--green hrt-base-tag hrt-base-tag--small"
                         aria-label="Suggested"
                       >
-                        <span
-                          class="suggested-donation-tag_icon__dhYCn suggested-donation-tag_withLabel__sv0PQ"
-                          >💚</span
-                        >
+                        <span class="suggested-donation-tag_icon__dhYCn suggested-donation-tag_withLabel__sv0PQ">💚</span>
                         <span>Suggested</span>
                       </span>
                     </button>
@@ -518,7 +435,6 @@
                   const donationButtons = document.querySelectorAll(
                     'ul[data-federalid="suggested-donations-list"] button'
                   );
-
                   const donationSummaryDDs = document.querySelectorAll(
                     ".checkout-summary_checkoutSummaryList__1z9xU dd"
                   );
@@ -528,68 +444,34 @@
                     donationAmountElement = donationSummaryDDs[0];
                     totalAmountElement = donationSummaryDDs[1];
                   }
-
                   donationButtons.forEach((button) => {
                     button.addEventListener("click", () => {
                       donationButtons.forEach((btn) =>
                         btn.setAttribute("aria-pressed", "false")
                       );
                       button.setAttribute("aria-pressed", "true");
-
                       if (donationAmountElement && totalAmountElement) {
                         donationAmountElement.textContent = `€${button.value}.00`;
                         totalAmountElement.textContent = `€${button.value}.00`;
                       }
+                      const donationSelectedEvent = new CustomEvent("donationSelected", {
+                        detail: { amount: button.value },
+                      });
+                      document.dispatchEvent(donationSelectedEvent);
                     });
                   });
                 </script>
 
-                <!-- Additional fields before the payment options (REMOVED: email/name/country/zip) -->
-                <div
-                  class="checkoutCurrencyField m-form-field m-form-field--stacked hrt-mb-3"
-                  bis_skin_checked="1"
-                >
-                  <div class="m-form-field-inner" bis_skin_checked="1">
-                    <label
-                      class="m-form-field-label m-form-field-label--prepend"
-                      for="checkout-donation"
-                    ></label>
-                  </div>
-                </div>
-
-                <div aria-live="polite" class="hrt-sr-only" bis_skin_checked="1"></div>
-
-                <fieldset
-                  class="hrt-checkout-step hrt-fieldset"
-                  bis_skin_checked="1"
-                >
-                  <legend class="hrt-fieldset-legend sf-hidden"></legend>
-                  <div bis_skin_checked="1"></div>
-                </fieldset>
-                <div
-                  class="checkout-rule_checkoutRule__RsZ5R hrt-mb-3 hrt-mt-3 hrt-rule hrt-rule--horizontal"
-                  bis_skin_checked="1"
-                ></div>
-
                 <!-- Payment Options -->
-                <div class="checkout-payment-options" bis_skin_checked="1">
+                <div class="checkout-payment-options">
                   <fieldset class="hrt-mb-3 hrt-fieldset">
-                    <legend class="hrt-font-bold hrt-fieldset-legend">
-                      <span class="hrt-text-body-md hrt-font-bold"
-                        >Payment method</span
-                      >
+                    <legend class="hrt-font-bold hrt-fieldset-legend"><br>
+                      <span class="hrt-text-body-md hrt-font-bold">Payment method</span>
                     </legend>
-                    <div class="hrt-mt-2" bis_skin_checked="1">
-                      <ul
-                        class="checkout-form-fields_checkoutPaymentOptions__wTG9d hrt-list-unstyled"
-                      >
-                        <li
-                          class="payment-method-option_checkoutPaymentItem__MRWEI"
-                        >
-                          <div
-                            class="payment-method-option_checkoutPaymentOption__2PCN3 hrt-radio-field"
-                            bis_skin_checked="1"
-                          >
+                    <div class="hrt-mt-2">
+                      <ul class="checkout-form-fields_checkoutPaymentOptions__wTG9d hrt-list-unstyled">
+                        <li class="payment-method-option_checkoutPaymentItem__MRWEI">
+                          <div class="payment-method-option_checkoutPaymentOption__2PCN3 hrt-radio-field">
                             <input
                               class="hrt-radio-field-input"
                               id="add-card"
@@ -599,10 +481,7 @@
                               checked
                             />
                             <label class="hrt-radio-field-label" for="add-card">
-                              <div
-                                class="hrt-disp-flex hrt-align-center"
-                                bis_skin_checked="1"
-                              >
+                              <div class="hrt-disp-flex hrt-align-center">
                                 <!-- Icon placeholder -->
                                 <svg
                                   aria-hidden="true"
@@ -623,65 +502,48 @@
                                     ></path>
                                   </symbol>
                                 </svg>
-                                <div
-                                  class="hrt-disp-flex hrt-align-center hrt-justify-between hrt-width-full"
-                                  bis_skin_checked="1"
-                                >
+                                <div class="hrt-disp-flex hrt-align-center hrt-justify-between hrt-width-full">
                                   <span>Credit or debit card</span>
                                 </div>
                               </div>
                             </label>
                           </div>
+                          <!-- Redirect method used instead of embedded fields -->
                         </li>
                       </ul>
                     </div>
                   </fieldset>
-                  <div class="hrt-mt-1" bis_skin_checked="1"></div>
+                  <div class="hrt-mt-1"></div>
                 </div>
 
-                <div
-                  class="checkout-rule_checkoutRule__RsZ5R hrt-mb-3 hrt-mt-3 hrt-rule hrt-rule--horizontal"
-                  bis_skin_checked="1"
-                ></div>
+                <div class="checkout-rule_checkoutRule__RsZ5R hrt-mb-3 hrt-mt-3 hrt-rule hrt-rule--horizontal"></div>
 
-                <!-- (Removed personal info fields for email/name/country/zip) -->
+                <!-- Personal Info Fields removed as per your request -->
 
                 <!-- Donation summary area -->
-                <div class="hrt-mb-4 hrt-mb-3 checkout-summary" bis_skin_checked="1">
+                <div class="hrt-mb-4 hrt-mb-3 checkout-summary">
                   <h2 class="heading-3 hrt-font-bold">Your donation</h2>
-                  <dl
-                    class="checkout-summary_checkoutSummaryList__1z9xU hrt-text-neutral-500"
-                  >
+                  <dl class="checkout-summary_checkoutSummaryList__1z9xU hrt-text-neutral-500">
                     <dt>Your donation</dt>
                     <dt class="hrt-disp-flex hrt-align-center"></dt>
                     <dd>€0.00</dd>
-                    <dt
-                      class="checkout-summary_checkoutSummaryTotalLabel__u1WMD hrt-text-neutral-800 hrt-pt-2"
-                    >
+                    <dt class="checkout-summary_checkoutSummaryTotalLabel__u1WMD hrt-text-neutral-800 hrt-pt-2">
                       Total due today
                     </dt>
-                    <dd
-                      class="checkout-summary_checkoutSummaryTotalAmount__oU1ez hrt-text-neutral-800 hrt-mb-0 hrt-pt-2"
-                    >
+                    <dd class="checkout-summary_checkoutSummaryTotalAmount__oU1ez hrt-text-neutral-800 hrt-mb-0 hrt-pt-2">
                       €0.00
                     </dd>
                   </dl>
                 </div>
 
                 <!-- Main Donate now button (Redirect flow) -->
-                <div
-                  class="payment-method-submit-button_paymentMethodSubmitButton__x_pFo"
-                  bis_skin_checked="1"
-                >
-                  <div class="hrt-width-full" bis_skin_checked="1">
-                    <div id="threeDS2Fingerprint" bis_skin_checked="1"></div>
-                    <div
-                      class="credit-card-submit-button_creditCardSubmitButtonWrapper__9cUFi hrt-width-full"
-                      bis_skin_checked="1"
-                    >
+                <div class="payment-method-submit-button_paymentMethodSubmitButton__x_pFo">
+                  <div class="hrt-width-full">
+                    <div id="threeDS2Fingerprint"></div>
+                    <div class="credit-card-submit-button_creditCardSubmitButtonWrapper__9cUFi hrt-width-full">
                       <button
                         class="hrt-mt-0 hrt-mr-0 hrt-mb-0 hrt-ml-0 hrt-max-width-full hrt-width-full credit-card-submit-button_creditCardSubmitButton__nUGf9 hrt-disp-flex hrt-justify-center gfm-fundraiser-button hrt-primary-button hrt-primary-button--full-for-mobile hrt-primary-button--large hrt-primary-button--default hrt-base-button"
-                        aria-label="Donate €0.00 now"
+                        aria-label="Donate now"
                         id="donate-now"
                         type="button"
                       >
@@ -691,44 +553,24 @@
                   </div>
 
                   <!-- GLOBAL ERROR MESSAGE BELOW THE BUTTON -->
-                  <div
-                    class="error-message"
-                    id="donation-form-error"
-                    style="display: none;"
-                  >
+                  <div class="error-message" id="donation-form-error" style="display: none;">
                     <img src="error.svg" alt="" class="error-icon" />
                     <span></span>
                   </div>
 
-                  <div
-                    class="hrt-disp-none hrt-width-full sf-hidden"
-                    bis_skin_checked="1"
-                  ></div>
-                  <div
-                    class="hrt-disp-none hrt-width-full sf-hidden"
-                    bis_skin_checked="1"
-                  ></div>
-                  <div
-                    class="hrt-disp-none hrt-width-full sf-hidden"
-                    bis_skin_checked="1"
-                  >
-                    <div
-                      class="hrt-disp-flex hrt-justify-center sf-hidden"
-                      bis_skin_checked="1"
-                    >
+                  <div class="hrt-disp-none hrt-width-full sf-hidden"></div>
+                  <div class="hrt-disp-none hrt-width-full sf-hidden"></div>
+                  <div class="hrt-disp-none hrt-width-full sf-hidden">
+                    <div class="hrt-disp-flex hrt-justify-center sf-hidden">
                       <div
                         id="paypal-button"
                         class="hrt-mt-0 hrt-mr-0 hrt-mb-0 hrt-ml-0 hrt-max-width-full hrt-width-full paypal-payfast_paypalPayfastSubmitButton__u8JfE sf-hidden"
-                        bis_skin_checked="1"
                       >
-                        <div bis_skin_checked="1" class="sf-hidden"></div>
+                        <div class="sf-hidden"></div>
                       </div>
                     </div>
                   </div>
-                  <div
-                    class="hrt-text-body-sm hrt-text-neutral-500 hrt-mt-3 hrt-mb-0"
-                    bis_skin_checked="1"
-                  >
+                  <div class="hrt-text-body-sm hrt-text-neutral-500 hrt-mt-3 hrt-mb-0">
                     By choosing the payment method above, you agree to GoFundMe's
                     <a
                       class="hrt-link hrt-link--gray-dark"
@@ -748,9 +590,8 @@
                       href="https://www.gofundme.com/pt-pt/c/privacy"
                     >
                       Privacy Notice
-                    </a>
-                    .
-                    <div class="pricing-link" bis_skin_checked="1">
+                    </a>.
+                    <div class="pricing-link">
                       Learn more about
                       <a
                         class="hrt-link hrt-link--gray-dark"
@@ -759,25 +600,18 @@
                         rel="noreferrer"
                       >
                         prices and rates
-                      </a>
-                      .
+                      </a>.
                     </div>
                   </div>
                 </div>
 
-                <div id="checkoutAppInvisibleCaptcha" bis_skin_checked="1"></div>
-                <div
-                  class="checkout-rule_checkoutRule__RsZ5R hrt-mb-3 hrt-mt-3 hrt-rule hrt-rule--horizontal"
-                  bis_skin_checked="1"
-                ></div>
+                <div id="checkoutAppInvisibleCaptcha"></div>
+                <div class="checkout-rule_checkoutRule__RsZ5R hrt-mb-3 hrt-mt-3 hrt-rule hrt-rule--horizontal"></div>
 
                 <!-- Guarantee section -->
-                <div class="gfm-guarantee" bis_skin_checked="1">
+                <div class="gfm-guarantee">
                   <section class="m-value-prop">
-                    <div
-                      class="hrt-spot-icon hrt-spot-icon--indigo hrt-spot-icon--large"
-                      bis_skin_checked="1"
-                    >
+                    <div class="hrt-spot-icon hrt-spot-icon--indigo hrt-spot-icon--large">
                       <svg
                         aria-hidden="true"
                         class="hrt-icon hrt-icon--large"
@@ -800,15 +634,10 @@
                         </symbol>
                       </svg>
                     </div>
-                    <div class="m-value-prop-content" bis_skin_checked="1">
-                      <h3 class="hrt-font-medium hrt-mb-1">
-                        GoFundMe protects your donation
-                      </h3>
-                      <p
-                        class="hrt-text-neutral-500 hrt-mt-0 hrt-mb-0 hrt-text-body-sm"
-                      >
-                        We guarantee a full refund for up to one year in the
-                        rare event of fraud.
+                    <div class="m-value-prop-content">
+                      <h3 class="hrt-font-medium hrt-mb-1">GoFundMe protects your donation</h3>
+                      <p class="hrt-text-neutral-500 hrt-mt-0 hrt-mb-0 hrt-text-body-sm">
+                        We guarantee a full refund for up to one year in the rare event of fraud.
                         <a
                           class="hrt-link hrt-link--gray-dark"
                           href="https://www.gofundme.com/pt-pt/c/safety/gofundme-guarantee"
@@ -828,79 +657,21 @@
                   referrerpolicy="no-referrer-when-downgrade"
                   alt=""
                 />
-                <button
-                  class="hrt-disp-none hrt-base-button sf-hidden"
-                  type="button"
-                ></button>
+                <button class="hrt-disp-none hrt-base-button sf-hidden" type="button"></button>
                 <next-route-announcer>
                   <p
                     aria-live="assertive"
                     id="__next-route-announcer__"
                     role="alert"
-                    style="border:0px;clip:rect(0px,0px,0px,0px);height:1px;margin:-1px;overflow:hidden;padding:0px;position:absolute;top:0px;width:1px;white-space:nowrap;overflow-wrap:normal"
+                    style="border:0; clip:rect(0,0,0,0); height:1px; margin:-1px; overflow:hidden; padding:0; position:absolute; top:0; width:1px; white-space:nowrap; overflow-wrap:normal"
                   ></p>
                 </next-route-announcer>
 
-                <!-- Additional Scripts for Donation Amount Updates (duplicate) -->
-                <script>
-                  const donationButtons2 = document.querySelectorAll(
-                    'ul[data-federalid="suggested-donations-list"] button'
-                  );
-                  const donationSummaryDDs2 = document.querySelectorAll(
-                    ".checkout-summary_checkoutSummaryList__1z9xU dd"
-                  );
+                <!-- (Removed duplicate donation summary update script if any) -->
 
-                  let donationAmountElement2 = null;
-                  let totalAmountElement2 = null;
-
-                  if (donationSummaryDDs2.length >= 2) {
-                    donationAmountElement2 = donationSummaryDDs2[0];
-                    totalAmountElement2 = donationSummaryDDs2[1];
-                  }
-
-                  donationButtons2.forEach((button) => {
-                    button.addEventListener("click", () => {
-                      if (donationAmountElement2 && totalAmountElement2) {
-                        donationAmountElement2.textContent = `€${button.value}.00`;
-                        totalAmountElement2.textContent = `€${button.value}.00`;
-                      }
-
-                      const donationSelectedEvent = new CustomEvent(
-                        "donationSelected",
-                        {
-                          detail: { amount: button.value },
-                        }
-                      );
-                      document.dispatchEvent(donationSelectedEvent);
-                    });
-                  });
-                </script>
-
-                <script>
-                  (function () {
-                    const yourDonation = document.querySelector(
-                      'dl.checkout-summary_checkoutSummaryList__1z9xU dd:not(.checkout-summary_checkoutSummaryTotalAmount__oU1ez)'
-                    );
-                    const totalDue = document.querySelector(
-                      'dl.checkout-summary_checkoutSummaryList__1z9xU dd.checkout-summary_checkoutSummaryTotalAmount__oU1ez'
-                    );
-
-                    document.addEventListener("donationSelected", function (e) {
-                      const selectedAmount = e.detail.amount;
-                      const formattedAmount = `€${parseInt(
-                        selectedAmount
-                      ).toLocaleString("en-US")}.00`;
-
-                      if (yourDonation) yourDonation.textContent = formattedAmount;
-                      if (totalDue) totalDue.textContent = formattedAmount;
-                    });
-                  })();
-                </script>
-
-                <!-- Donate Button Logic -->
+                <!-- Script to handle Donate Now button using only the donation amount -->
                 <script>
                   document.addEventListener("DOMContentLoaded", function () {
-                    // Reusable function to show a global error under the Donate button
                     function showGlobalError(message) {
                       const globalErrorDiv = document.getElementById("donation-form-error");
                       if (globalErrorDiv) {
@@ -915,37 +686,9 @@
                         }
                       }
                     }
-
-                    // Validate only if an amount is selected
-                    function validateAllFields() {
-                      // Check which donation button is pressed
-                      let selectedAmount = "0";
-                      const pressedBtn = document.querySelector(
-                        'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
-                      );
-                      if (pressedBtn) {
-                        selectedAmount = pressedBtn.value;
-                      }
-
-                      // If no amount was selected, show error
-                      if (selectedAmount === "0") {
-                        showGlobalError("Please select a donation amount.");
-                        return false;
-                      }
-
-                      // If we get here, amount is selected
-                      showGlobalError(""); // Clear any global error
-                      return true;
-                    }
-
                     const donateNowBtn = document.getElementById("donate-now");
                     donateNowBtn.addEventListener("click", async function () {
-                      // Step 1: Validate (only donation amount needed)
-                      if (!validateAllFields()) {
-                        return;
-                      }
-
-                      // Get the selected amount
+                      // Only check that a donation amount has been selected
                       let selectedAmount = "0";
                       const pressedBtn = document.querySelector(
                         'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
@@ -953,42 +696,42 @@
                       if (pressedBtn) {
                         selectedAmount = pressedBtn.value;
                       }
-
-                      // Use the global BACKEND_URL from the <script> in the <head>
+                      if (selectedAmount === "0") {
+                        showGlobalError("Please select a donation amount.");
+                        return;
+                      }
+                      // Clear any global error
+                      showGlobalError("");
                       const baseUrl = window.BACKEND_URL || "";
-
-                      // Only send amount to the server
+                      // Send only the amount to the backend
                       const dataToStore = {
                         amount: selectedAmount,
                       };
-
                       try {
-                        // Attempt to create the donation
                         const resp = await fetch(baseUrl + "/create-donation", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(dataToStore),
-                          credentials: "include", // send/receive cookies
+                          credentials: "include",
                         });
                         if (!resp.ok) {
-                          showGlobalError("Could not create donation, please try again.");
+                          console.error("Donation creation failed.");
                           return;
                         }
                         const result = await resp.json();
                         if (!result.ok) {
-                          showGlobalError("Error: " + result.error);
+                          console.error("Error: " + result.error);
                           return;
                         }
-                        // On success, redirect to the Redsys payment page
                         window.location.href =
                           baseUrl + "/iframe-sis?orderId=" + encodeURIComponent(result.orderId);
                       } catch (error) {
-                        showGlobalError("Error creating donation: " + error);
+                        console.error("Error creating donation:", error);
                       }
                     });
                   });
                 </script>
-                <!-- (Removed inSite scripts, personal info fields, and their validations) -->
+                <!-- (Removed the old embedded Redsys inSite scripts) -->
               </div>
             </div>
           </div>
