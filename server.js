@@ -1,22 +1,32 @@
 // ===================
 // CONFIGURATION
 // ===================
+
+// Required libraries and modules
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
-const { createRedsysAPI, PRODUCTION_URLS, randomTransactionId } = require('redsys-easy');
+
+// Redsys easy - using production URLs now
+const {
+  createRedsysAPI,
+  PRODUCTION_URLS,
+  randomTransactionId
+} = require('redsys-easy');
 
 // **** Production configuration ****
 const MERCHANT_CODE = '367149531';
 const TERMINAL = '1';
 const SECRET_KEY = 'xdfHKzvmKSvUxPz91snmmjx14FpSWsU7';
 
+// Callback URLs – using your Railway domain
 const MERCHANT_MERCHANTURL = 'https://fbcid-production.up.railway.app/redsys-notification';
 const MERCHANT_URLOK = 'https://fbcid-production.up.railway.app/thanks.html';
 const MERCHANT_URLKO = 'https://fbcid-production.up.railway.app/error.html';
 
+// Create the Redsys API with production URLs
 const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
   secretKey: SECRET_KEY,
   urls: PRODUCTION_URLS
@@ -25,8 +35,7 @@ const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
 // ===================
 // DATABASE SETUP
 // ===================
-const dbPath = path.join(__dirname, 'donations.db');
-const db = new sqlite3.Database(dbPath, (err) => {
+const db = new sqlite3.Database('./donations.db', (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
   } else {
@@ -34,6 +43,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
+// Create the donations table if it doesn't exist
 db.run(`
   CREATE TABLE IF NOT EXISTS donations (
     orderId TEXT PRIMARY KEY,
@@ -50,18 +60,13 @@ db.run(`
 // ===================
 const app = express();
 
-// Use CORS middleware at the very top.
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like curl or mobile apps)
     if (!origin) return callback(null, true);
     callback(null, origin);
   },
   credentials: true
 }));
-
-// (Optional) Explicitly handle OPTIONS requests
-app.options('*', cors());
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -73,7 +78,11 @@ app.use(express.static(path.join(__dirname, 'views')));
 
 // Serve the donation page (index.html)
 app.get('/', (req, res, next) => {
-  res.sendFile(path.join(__dirname, 'views', 'index.html'));
+  try {
+    res.sendFile(path.join(__dirname, 'views', 'index.html'));
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Endpoint to create a donation and store donor data in SQLite (only "amount" is required)
@@ -82,12 +91,13 @@ app.post('/create-donation', (req, res, next) => {
   if (!amount) {
     return res.status(400).json({ ok: false, error: 'Missing amount.' });
   }
+  // Generate a unique order ID
   const orderId = randomTransactionId();
+  // Insert donation data into SQLite
   db.run('INSERT INTO donations (orderId, amount) VALUES (?, ?)', [orderId, amount], function(err) {
     if (err) {
       console.error('Error inserting donation:', err.message);
-      // Pass the error to our global error handler so that CORS headers are still added.
-      return next(err);
+      return res.status(500).json({ ok: false, error: 'Database error.' });
     }
     return res.json({ ok: true, orderId });
   });
@@ -99,14 +109,16 @@ app.get('/iframe-sis', (req, res, next) => {
   if (!orderId) {
     return res.status(400).send('<h1>Error: missing orderId param</h1>');
   }
+  // Retrieve donation data from SQLite
   db.get('SELECT * FROM donations WHERE orderId = ?', [orderId], (err, row) => {
     if (err) {
       console.error('Database error:', err.message);
-      return next(err);
+      return res.status(500).send('<h1>Error: database error</h1>');
     }
     if (!row) {
       return res.status(404).send('<h1>Error: no matching donor data</h1>');
     }
+    // Convert amount to cents (Redsys expects an integer value in cents)
     const dsAmount = (parseFloat(row.amount) * 100).toFixed(0);
     const params = {
       DS_MERCHANT_MERCHANTCODE: MERCHANT_CODE,
@@ -161,7 +173,7 @@ app.post('/redsys-notification', (req, res, next) => {
   }
 });
 
-// Global error handler – ensures errors are sent with CORS headers.
+// Global error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ ok: false, error: 'Internal Server Error' });
