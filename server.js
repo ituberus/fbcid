@@ -9,27 +9,27 @@ const cors = require('cors');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
-// Redsys easy - using production URLs now
+// Redsys easy - using sandbox URLs for test mode
 const {
   createRedsysAPI,
-  PRODUCTION_URLS,
+  SANDBOX_URLS,
   randomTransactionId
 } = require('redsys-easy');
 
-// **** Production configuration ****
+// **** Test (Sandbox) configuration ****
 const MERCHANT_CODE = '367149531';
 const TERMINAL = '1';
 const SECRET_KEY = 'xdfHKzvmKSvUxPz91snmmjx14FpSWsU7';
 
-// Callback URLs – using your Railway domain
+// Callback URLs – using your Railway domain (adjust as needed)
 const MERCHANT_MERCHANTURL = 'https://fbcid-production.up.railway.app/redsys-notification';
 const MERCHANT_URLOK = 'https://yourdomain.com/thanks.html';
 const MERCHANT_URLKO = 'https://yourdomain.com/error.html';
 
-// Create the Redsys API with production URLs
+// Create the Redsys API with sandbox URLs
 const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
   secretKey: SECRET_KEY,
-  urls: PRODUCTION_URLS
+  urls: SANDBOX_URLS
 });
 
 // ===================
@@ -155,16 +155,17 @@ app.get('/iframe-sis', (req, res, next) => {
   });
 });
 
-// Redsys payment notification endpoint
+// Redsys payment notification endpoint (only logs successful payments)
 app.post('/redsys-notification', (req, res, next) => {
   try {
     const result = processRedirectNotification(req.body);
     const responseCode = parseInt(result.Ds_Response || '9999', 10);
     if (responseCode < 100) {
-      console.log('Payment SUCCESS, order:', result.Ds_Order);
+      // Log successful payment details to the console
+      console.log('Payment SUCCESS:', result);
       return res.send('OK');
     } else {
-      console.log('Payment FAILED, order:', result.Ds_Order, 'code:', responseCode);
+      // Do not log failed payment details
       return res.send('OK');
     }
   } catch (err) {
@@ -181,5 +182,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running at https://fbcid-production.up.railway.app on port ${PORT}`);
+  console.log(`Server running in test mode on port ${PORT}`);
 });
