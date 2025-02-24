@@ -14,6 +14,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
+const geoip = require('geoip-lite'); // <-- Added geoip-lite
 
 // Redsys Easy – using sandbox URLs for test mode
 const { createRedsysAPI, SANDBOX_URLS, randomTransactionId } = require('redsys-easy');
@@ -231,6 +232,15 @@ async function sendFacebookConversionEvent(donation, req = null) {
     const userAgent = donation.client_user_agent || 
                      (req && req.headers['user-agent']) || '';
 
+    // Get country using geoip-lite
+    let country = 'unknown';
+    try {
+      const geo = geoip.lookup(clientIp);
+      country = geo ? geo.country : 'unknown';
+    } catch (err) {
+      console.error('Error looking up geoip:', err);
+    }
+
     const eventData = {
       event_name: 'Purchase',
       event_time: timestamp,
@@ -241,7 +251,8 @@ async function sendFacebookConversionEvent(donation, req = null) {
         client_ip_address: clientIp,
         client_user_agent: userAgent,
         fbp: donation.fbp,
-        fbc: donation.fbc
+        fbc: donation.fbc,
+        country: country // <-- Added country to event data
       },
       custom_data: {
         value: amount,
