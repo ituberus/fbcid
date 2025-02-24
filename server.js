@@ -9,6 +9,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 const sqlite3 = require('sqlite3').verbose();
 const morgan = require('morgan');
 const { promisify } = require('util');
@@ -26,15 +27,15 @@ const { createRedsysAPI, SANDBOX_URLS, randomTransactionId } = require('redsys-e
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'somesecret';
 
-const FACEBOOK_PIXEL_ID = process.env.FACEBOOK_PIXEL_ID || '';
+const FACEBOOK_PIXEL_ID = process.env.FACEBOOK_PIXEL_ID || ''; // e.g., '1155603432794001'
 const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN || '';
 const FACEBOOK_TEST_EVENT_CODE = process.env.FACEBOOK_TEST_EVENT_CODE || '';
 
-// Redsys configuration – adjust the callback URLs as needed
+// Redsys configuration – adjust callback URLs as needed
 const MERCHANT_CODE = process.env.MERCHANT_CODE || '367149531';
 const TERMINAL = process.env.TERMINAL || '1';
-const SECRET_KEY = process.env.SECRET_KEY || 'sq7HjrUOBfKmC576ILgskD5srU870j7'; // Note: update if needed
-const MERCHANT_MERCHANTURL = process.env.MERCHANT_MERCHANTURL || 'https://fbcid-production.up.railway.app/redsys-notification';
+const SECRET_KEY = process.env.SECRET_KEY || 'sq7HjrUOBfKmC576ILgskD5srU870gJ7';
+const MERCHANT_MERCHANTURL = process.env.MERCHANT_MERCHANTURL || 'https://yourdomain.com/redsys-notification';
 const MERCHANT_URLOK = process.env.MERCHANT_URLOK || 'https://yourdomain.com/thanks.html';
 const MERCHANT_URLKO = process.env.MERCHANT_URLKO || 'https://yourdomain.com/error.html';
 
@@ -57,7 +58,10 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Use SQLite store for sessions (data saved in sessions.sqlite)
 app.use(session({
+  store: new SQLiteStore({ dir: './', db: 'sessions.sqlite' }),
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
@@ -65,11 +69,11 @@ app.use(session({
     maxAge: 7 * 24 * 60 * 60 * 1000,
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'strict',
-  },
+    sameSite: 'strict'
+  }
 }));
 
-// Serve static files – we assume your landing (index.html) is in the "views" folder
+// Serve static files – we assume your landing page is in the "views" folder
 app.use(express.static(path.join(__dirname, 'views')));
 
 // ---------------------------
@@ -77,7 +81,7 @@ app.use(express.static(path.join(__dirname, 'views')));
 // ---------------------------
 const db = new sqlite3.Database('./database.sqlite', (err) => {
   if (err) {
-    console.error('Error opening database:', err);
+    console.error('Error opening SQLite database:', err);
   } else {
     console.log('Connected to SQLite database.');
   }
@@ -111,7 +115,7 @@ const dbAll = (...args) => {
 
 // Create/alter tables as needed
 db.serialize(() => {
-  // Donations table – storing minimal data for Redsys & FB conversion
+  // Donations table – storing minimal Redsys and FB conversion data
   db.run(
     `CREATE TABLE IF NOT EXISTS donations (
       orderId TEXT PRIMARY KEY,
@@ -121,10 +125,12 @@ db.serialize(() => {
       fbc TEXT,
       redsys_data TEXT,
       fb_conversion_sent INTEGER DEFAULT 0,
+      client_ip_address TEXT,
+      client_user_agent TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`
   );
-  // Facebook Conversion Logs for retries
+  // FB Conversion Logs for retries
   db.run(
     `CREATE TABLE IF NOT EXISTS fb_conversion_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -140,36 +146,43 @@ db.serialize(() => {
 });
 
 // ---------------------------
-// Helper: Send FB Conversion Event
+// Helper: Send Facebook Conversion Event
 // ---------------------------
 async function sendFacebookConversionEvent(donation) {
-  // We only send if we have fbp/fbc data; fbclid is optional.
+  // Check that we have the required FB data
   if (!donation.fbp && !donation.fbc) {
     console.warn(`Skipping FB conversion for order ${donation.orderId}: missing fbp/fbc.`);
     return { success: false, error: 'Missing fbp/fbc' };
   }
 
-  // Dynamically import node-fetch (avoid top-level ESM issues)
+  // Dynamically import node-fetch (to avoid ESM issues)
   const { default: fetch } = await import('node-fetch');
 
+  // Build the event data – you can add client IP / user agent if desired
   const eventData = {
     event_name: 'Purchase',
     event_time: Math.floor(Date.now() / 1000),
     event_id: donation.orderId,
-    event_source_url: MERCHANT_URLOK, // You can adjust this URL as needed
+    event_source_url: MERCHANT_URLOK, // Using the success URL as source
     action_source: 'website',
     user_data: {
       fbp: donation.fbp,
-      fbc: donation.fbc,
+      fbc: donation.fbc
     },
     custom_data: {
       value: donation.amount, // amount in EUR
       currency: 'EUR'
     }
   };
-
   if (donation.fbclid) {
     eventData.custom_data.fbclid = donation.fbclid;
+  }
+  // Optionally include client IP & user agent (if stored)
+  if (donation.client_ip_address) {
+    eventData.user_data.client_ip_address = donation.client_ip_address;
+  }
+  if (donation.client_user_agent) {
+    eventData.user_data.client_user_agent = donation.client_user_agent;
   }
 
   const payload = { data: [eventData] };
@@ -178,7 +191,6 @@ async function sendFacebookConversionEvent(donation) {
   }
 
   const url = `https://graph.facebook.com/v15.0/${FACEBOOK_PIXEL_ID}/events?access_token=${FACEBOOK_ACCESS_TOKEN}`;
-
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -195,12 +207,11 @@ async function sendFacebookConversionEvent(donation) {
   return { success: true, result };
 }
 
-// Exponential backoff retry for sending FB conversion
+// Exponential backoff retry for FB conversion
 async function attemptFacebookConversion(donation) {
   const maxAttempts = 3;
   let attempt = 0;
   let lastError = null;
-
   while (attempt < maxAttempts) {
     try {
       const result = await sendFacebookConversionEvent(donation);
@@ -213,7 +224,7 @@ async function attemptFacebookConversion(donation) {
     }
     attempt++;
     console.warn(`Attempt ${attempt} failed for order ${donation.orderId}: ${lastError.message}`);
-    // Exponential backoff delay: 2s, 4s, 8s...
+    // Exponential backoff: 2s, 4s, 8s...
     await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
   }
   return { success: false, error: lastError, attempts: attempt };
@@ -223,7 +234,8 @@ async function attemptFacebookConversion(donation) {
 // Endpoints for FB Data Storage/Collection
 // ---------------------------
 
-// Store fbclid, fbp, fbc in session (generate if missing)
+// POST /api/store-fb-data
+// Stores fbclid, fbp, fbc in the session (generates missing values) and logs the received data.
 app.post('/api/store-fb-data', (req, res) => {
   try {
     let { fbclid, fbp, fbc } = req.body;
@@ -234,9 +246,20 @@ app.post('/api/store-fb-data', (req, res) => {
     if (!fbp) {
       const randomPart = Math.floor(Math.random() * 1e16);
       fbp = `fb.1.${timestamp}.${randomPart}`;
+      console.log(`Generated fbp: ${fbp}`);
+    } else {
+      console.log(`Received fbp from client: ${fbp}`);
     }
     if (!fbc && fbclid) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
+      console.log(`Generated fbc: ${fbc}`);
+    } else if (fbc) {
+      console.log(`Received fbc from client: ${fbc}`);
+    }
+    if (fbclid) {
+      console.log(`Received fbclid: ${fbclid}`);
+    } else {
+      console.log('No fbclid received.');
     }
     req.session.fbp = fbp;
     req.session.fbc = fbc;
@@ -248,7 +271,7 @@ app.post('/api/store-fb-data', (req, res) => {
   }
 });
 
-// Retrieve fb data from session
+// GET /api/get-fb-data – retrieves stored FB data from the session
 app.get('/api/get-fb-data', (req, res) => {
   try {
     if (!req.session) {
@@ -266,24 +289,26 @@ app.get('/api/get-fb-data', (req, res) => {
 // Donation & Redsys Payment Routes
 // ---------------------------
 
-// Serve the landing page (index.html)
+// GET / – serve the landing page (index.html)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
-// Endpoint to create a donation record.
-// Expects { amount } in the body. Also grabs fb data from the session.
+// POST /create-donation
+// Creates a donation record in SQLite. Expects { amount } in the body.
+// Also captures fb data from the session.
 app.post('/create-donation', async (req, res) => {
   try {
     const { amount } = req.body;
     if (!amount) {
       return res.status(400).json({ ok: false, error: 'Missing amount.' });
     }
-    // Generate a unique orderId using Redsys helper
+    // Generate unique orderId using Redsys helper
     const orderId = randomTransactionId();
     const fbclid = req.session ? req.session.fbclid : null;
     const fbp = req.session ? req.session.fbp : null;
     const fbc = req.session ? req.session.fbc : null;
+    console.log(`Creating donation with orderId ${orderId} and amount ${amount} EUR.`);
     await dbRun(
       'INSERT INTO donations (orderId, amount, fbclid, fbp, fbc) VALUES (?, ?, ?, ?, ?)',
       [orderId, amount, fbclid, fbp, fbc]
@@ -295,13 +320,13 @@ app.post('/create-donation', async (req, res) => {
   }
 });
 
-// Endpoint to initiate Redsys payment via an iframe redirect.
-// Looks up the donation record by orderId and builds the Redsys form.
+// GET /iframe-sis
+// Looks up the donation record by orderId and builds an auto‑submitting Redsys payment form.
 app.get('/iframe-sis', async (req, res, next) => {
   try {
     const { orderId } = req.query;
     if (!orderId) {
-      return res.status(400).send('<h1>Error: missing orderId param</h1>');
+      return res.status(400).send('<h1>Error: missing orderId parameter</h1>');
     }
     const donation = await dbGet('SELECT * FROM donations WHERE orderId = ?', [orderId]);
     if (!donation) {
@@ -347,45 +372,42 @@ app.get('/iframe-sis', async (req, res, next) => {
   }
 });
 
-// Redsys payment notification endpoint.
-// When payment is successful (Ds_Response < 100), log the payload, update the donation,
-// and then attempt to send a Facebook Conversion event.
+// POST /redsys-notification
+// Processes the Redsys payment notification.
+// If payment is successful (Ds_Response < 100), updates the donation record,
+// logs the Redsys payload, and triggers a Facebook conversion event.
 app.post('/redsys-notification', async (req, res, next) => {
   try {
     const result = processRedirectNotification(req.body);
     const responseCode = parseInt(result.Ds_Response || '9999', 10);
     if (responseCode < 100) {
-      // Payment successful
       console.log('Payment SUCCESS:', result);
       const orderId = result.Ds_Order;
       // Update donation record with the Redsys payload
-      await dbRun(
-        'UPDATE donations SET redsys_data = ? WHERE orderId = ?',
-        [JSON.stringify(result), orderId]
-      );
+      await dbRun('UPDATE donations SET redsys_data = ? WHERE orderId = ?', [JSON.stringify(result), orderId]);
+      // Optionally, update client IP and user agent if available from the notification request
+      const clientIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '';
+      const clientUserAgent = req.headers['user-agent'] || '';
+      await dbRun('UPDATE donations SET client_ip_address = ?, client_user_agent = ? WHERE orderId = ?', [clientIp, clientUserAgent, orderId]);
+      
       // Retrieve the donation record
       const donation = await dbGet('SELECT * FROM donations WHERE orderId = ?', [orderId]);
       if (donation && donation.fb_conversion_sent == 0) {
-        // Log the raw notification payload for conversion retry tracking
+        // Log the raw notification payload for FB conversion tracking
         const rawPayload = JSON.stringify(req.body);
         const logResult = await dbRun(
           `INSERT INTO fb_conversion_logs (donation_orderId, raw_payload, attempts, status)
            VALUES (?, ?, ?, ?)`,
           [orderId, rawPayload, 0, 'pending']
         );
-        // Attempt FB conversion with retry
         const conversionResult = await attemptFacebookConversion(donation);
         const now = new Date().toISOString();
         if (conversionResult.success) {
           await dbRun(
-            `UPDATE fb_conversion_logs SET status = 'sent', attempts = ?, last_attempt = ?
-             WHERE id = ?`,
+            `UPDATE fb_conversion_logs SET status = 'sent', attempts = ?, last_attempt = ? WHERE id = ?`,
             [conversionResult.attempts, now, logResult.lastID]
           );
-          await dbRun(
-            'UPDATE donations SET fb_conversion_sent = 1 WHERE orderId = ?',
-            [orderId]
-          );
+          await dbRun('UPDATE donations SET fb_conversion_sent = 1 WHERE orderId = ?', [orderId]);
         } else {
           await dbRun(
             `UPDATE fb_conversion_logs SET attempts = ?, last_attempt = ?, error = ?
@@ -438,9 +460,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'An internal server error occurred.' });
 });
 
-// ---------------------------
-// Global Process Error Handlers
-// ---------------------------
+// Global process error handlers
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection:', reason);
 });
