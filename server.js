@@ -18,6 +18,7 @@ const sqlite3 = require('sqlite3').verbose();
 const { promisify } = require('util');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 // Redsys integration
 const { createRedsysAPI, SANDBOX_URLS, randomTransactionId } = require('redsys-easy');
