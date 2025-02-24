@@ -59,7 +59,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Use SQLite store for sessions (data saved in sessions.sqlite)
+// Use SQLite store for sessions (stored in "sessions.sqlite")
 app.use(session({
   store: new SQLiteStore({ dir: './', db: 'sessions.sqlite' }),
   secret: SESSION_SECRET,
@@ -73,7 +73,7 @@ app.use(session({
   }
 }));
 
-// Serve static files – we assume your landing page is in the "views" folder
+// Serve static files – assume your landing page is in the "views" folder
 app.use(express.static(path.join(__dirname, 'views')));
 
 // ---------------------------
@@ -90,7 +90,7 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
 // Promisify some database functions
 const dbRun = (...args) => {
   return new Promise((resolve, reject) => {
-    db.run(...args, function (err) {
+    db.run(...args, function(err) {
       if (err) return reject(err);
       resolve(this);
     });
@@ -149,35 +149,34 @@ db.serialize(() => {
 // Helper: Send Facebook Conversion Event
 // ---------------------------
 async function sendFacebookConversionEvent(donation) {
-  // Check that we have the required FB data
+  // Ensure required FB data exists (fbp and/or fbc)
   if (!donation.fbp && !donation.fbc) {
     console.warn(`Skipping FB conversion for order ${donation.orderId}: missing fbp/fbc.`);
     return { success: false, error: 'Missing fbp/fbc' };
   }
 
-  // Dynamically import node-fetch (to avoid ESM issues)
+  // Dynamically import node-fetch to avoid ESM issues
   const { default: fetch } = await import('node-fetch');
 
-  // Build the event data – you can add client IP / user agent if desired
+  // Build the conversion event payload
   const eventData = {
     event_name: 'Purchase',
     event_time: Math.floor(Date.now() / 1000),
     event_id: donation.orderId,
-    event_source_url: MERCHANT_URLOK, // Using the success URL as source
+    event_source_url: MERCHANT_URLOK,
     action_source: 'website',
     user_data: {
       fbp: donation.fbp,
       fbc: donation.fbc
     },
     custom_data: {
-      value: donation.amount, // amount in EUR
+      value: donation.amount, // in EUR
       currency: 'EUR'
     }
   };
   if (donation.fbclid) {
     eventData.custom_data.fbclid = donation.fbclid;
   }
-  // Optionally include client IP & user agent (if stored)
   if (donation.client_ip_address) {
     eventData.user_data.client_ip_address = donation.client_ip_address;
   }
@@ -296,7 +295,7 @@ app.get('/', (req, res) => {
 
 // POST /create-donation
 // Creates a donation record in SQLite. Expects { amount } in the body.
-// Also captures fb data from the session.
+// Also captures FB data from the session.
 app.post('/create-donation', async (req, res) => {
   try {
     const { amount } = req.body;
@@ -321,7 +320,7 @@ app.post('/create-donation', async (req, res) => {
 });
 
 // GET /iframe-sis
-// Looks up the donation record by orderId and builds an auto‑submitting Redsys payment form.
+// Retrieves the donation record by orderId and builds an auto‑submitting Redsys payment form.
 app.get('/iframe-sis', async (req, res, next) => {
   try {
     const { orderId } = req.query;
@@ -373,11 +372,11 @@ app.get('/iframe-sis', async (req, res, next) => {
 });
 
 // POST /redsys-notification
-// Processes the Redsys payment notification.
-// If payment is successful (Ds_Response < 100), updates the donation record,
-// logs the Redsys payload, and triggers a Facebook conversion event.
+// Processes the Redsys payment notification. If payment is successful (Ds_Response < 100),
+// updates the donation record, logs the payload, and triggers a Facebook conversion event.
 app.post('/redsys-notification', async (req, res, next) => {
   try {
+    console.log('Received Redsys notification:', req.body);
     const result = processRedirectNotification(req.body);
     const responseCode = parseInt(result.Ds_Response || '9999', 10);
     if (responseCode < 100) {
@@ -385,7 +384,7 @@ app.post('/redsys-notification', async (req, res, next) => {
       const orderId = result.Ds_Order;
       // Update donation record with the Redsys payload
       await dbRun('UPDATE donations SET redsys_data = ? WHERE orderId = ?', [JSON.stringify(result), orderId]);
-      // Optionally, update client IP and user agent if available from the notification request
+      // Optionally update client IP and user agent from the notification request
       const clientIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '';
       const clientUserAgent = req.headers['user-agent'] || '';
       await dbRun('UPDATE donations SET client_ip_address = ?, client_user_agent = ? WHERE orderId = ?', [clientIp, clientUserAgent, orderId]);
