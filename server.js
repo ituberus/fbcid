@@ -19,7 +19,7 @@ const {
 // **** Test (Sandbox) configuration ****
 const MERCHANT_CODE = '367149531';
 const TERMINAL = '1';
-const SECRET_KEY = 'xdfHKzvmKSvUxPz91snmmjx14FpSWsU7';
+const SECRET_KEY = 'sq7HjrUOBfKmC576ILgskD5srU870gJ7';
 
 // Callback URLs – using your Railway domain (adjust as needed)
 const MERCHANT_MERCHANTURL = 'https://fbcid-production.up.railway.app/redsys-notification';
