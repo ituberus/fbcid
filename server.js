@@ -131,7 +131,7 @@ app.use(session({
   }),
   secret: SESSION_SECRET,
   resave: false,
-  saveUninitialized: true, // Changed to true to ensure session data is saved
+  saveUninitialized: true, // Ensure session data is saved
   cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     secure: NODE_ENV === 'production',
@@ -166,8 +166,8 @@ const dbRun = (...args) => new Promise((resolve, reject) => {
     resolve(this);
   });
 });
-const dbGet = require('util').promisify(db.get).bind(db);
-const dbAll = require('util').promisify(db.all).bind(db);
+const dbGet = promisify(db.get).bind(db);
+const dbAll = promisify(db.all).bind(db);
 
 // Initialize database schema and perform migrations
 async function initializeDatabase() {
@@ -238,7 +238,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
 
     let { fbp, fbc, fbclid } = donation;
 
-    // Always ensure fbp exists
+    // Ensure fbp exists
     if (!fbp) {
       fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
       try {
@@ -252,9 +252,10 @@ async function sendFacebookConversionEvent(donation, req = null) {
       donation.fbp = fbp;
     }
 
-    // Generate fbc if fbclid exists but fbc doesn't
-    if (!fbc && fbclid) {
+    // Ensure fbc is generated from fbclid if missing
+    if (fbclid && !fbc) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
+      console.log(`Generated fbc for order ${donation.orderId}: ${fbc}`);
       try {
         await dbRun(
           'UPDATE donations SET fbc = ? WHERE orderId = ?',
@@ -278,9 +279,9 @@ async function sendFacebookConversionEvent(donation, req = null) {
     }
 
     // Get client info from stored data or current request
-    const clientIp = donation.client_ip || 
+    const clientIp = donation.client_ip ||
       (req && (req.headers['x-forwarded-for'] || req.connection?.remoteAddress)) || '';
-    const userAgent = donation.client_user_agent || 
+    const userAgent = donation.client_user_agent ||
       (req && req.headers['user-agent']) || '';
 
     // Convert IP to country using our helper function
@@ -297,20 +298,16 @@ async function sendFacebookConversionEvent(donation, req = null) {
       user_data: {
         client_ip_address: clientIp,
         client_user_agent: userAgent,
-        fbp: donation.fbp,
-        fbc: donation.fbc,
+        fbp,
+        fbc,
         country: hashedCountry
       },
       custom_data: {
         value: amount,
-        currency: 'EUR'
+        currency: 'EUR',
+        fbclid: fbclid || null
       }
     };
-
-    // Ensure fbclid is included if it exists
-    if (fbclid) {
-      eventData.custom_data.fbclid = fbclid;
-    }
 
     console.log('Sending FB conversion event:', JSON.stringify(eventData, null, 2));
 
@@ -333,7 +330,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
 
     const result = await response.json();
     console.log('Facebook conversion result:', result);
-    
+
     if (result.events_received !== 1) {
       throw new Error(`Expected 1 event received, got ${result.events_received}`);
     }
@@ -388,14 +385,14 @@ app.post('/api/store-fb-data', async (req, res) => {
     console.log('Received FB data from landing page:', { fbclid, fbp, fbc });
 
     const timestamp = Math.floor(Date.now() / 1000);
-    
-    // Ensure fbp exists
+
+    // Always ensure fbp exists
     if (!fbp) {
       fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
       console.log(`Generated fbp: ${fbp}`);
     }
-    
-    // Always generate fbc if fbclid exists and fbc is missing
+
+    // Ensure fbc is created from fbclid if missing
     if (fbclid && !fbc) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
       console.log(`Generated fbc: ${fbc}`);
@@ -458,24 +455,30 @@ app.post('/create-donation', async (req, res) => {
 
     const orderId = randomTransactionId();
     const fbclid = req.session?.fbclid;
-    const fbp = req.session?.fbp;
-    const fbc = req.session?.fbc;
-    
+    let fbp = req.session?.fbp;
+    let fbc = req.session?.fbc;
+
+    // Ensure fbp exists
+    const timestamp = Math.floor(Date.now() / 1000);
+    if (!fbp) {
+      fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
+    }
+
+    // Ensure fbc is created from fbclid if missing
+    if (fbclid && !fbc) {
+      fbc = `fb.1.${timestamp}.${fbclid}`;
+    }
+
     // Get client info
     const clientIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '';
     const userAgent = req.headers['user-agent'] || '';
-
-    // Generate fbp/fbc if not present in session
-    const timestamp = Math.floor(Date.now() / 1000);
-    const generatedFbp = fbp || `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
-    const generatedFbc = fbc || (fbclid ? `fb.1.${timestamp}.${fbclid}` : null);
 
     await dbRun(
       `INSERT INTO donations (
         orderId, amount, fbclid, fbp, fbc, 
         client_ip, client_user_agent
       ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [orderId, amount, fbclid, generatedFbp, generatedFbc, clientIp, userAgent]
+      [orderId, amount, fbclid, fbp, fbc, clientIp, userAgent]
     );
 
     console.log(`Created donation with orderId: ${orderId} and amount: ${amount}`);
