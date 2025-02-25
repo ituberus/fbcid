@@ -11,7 +11,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
-const geoip = require('geoip-lite'); // <-- Added geoip-lite
+const geoip = require('geoip-lite');
 
 // Redsys Easy – using sandbox URLs for test mode
 const { createRedsysAPI, SANDBOX_URLS, randomTransactionId } = require('redsys-easy');
@@ -238,6 +238,9 @@ async function sendFacebookConversionEvent(donation, req = null) {
       console.error('Error looking up geoip:', err);
     }
 
+    // Hash the country value using SHA256
+    const hashedCountry = crypto.createHash('sha256').update(country).digest('hex');
+
     const eventData = {
       event_name: 'Purchase',
       event_time: timestamp,
@@ -249,7 +252,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
         client_user_agent: userAgent,
         fbp: donation.fbp,
         fbc: donation.fbc,
-        country: country // <-- Added country to event data
+        country: hashedCountry // Use the hashed country value here
       },
       custom_data: {
         value: amount,
@@ -266,6 +269,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
       payload.test_event_code = FACEBOOK_TEST_EVENT_CODE;
     }
 
+    // Log the raw payload sent to Facebook
     console.log('Sending FB conversion event:', JSON.stringify(payload, null, 2));
 
     const url = `https://graph.facebook.com/v15.0/${FACEBOOK_PIXEL_ID}/events?access_token=${FACEBOOK_ACCESS_TOKEN}`;
