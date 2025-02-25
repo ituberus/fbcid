@@ -1,5 +1,4 @@
-<!-- Include this script on your landing page -->
-<script>
+
 (function() {
     // === CONFIGURATION ===
     // Your actual Facebook Pixel ID
@@ -76,4 +75,4 @@
         }
     }, pollInterval);
 })();
-</script>
+
