@@ -383,6 +383,7 @@ app.post('/api/store-fb-data', async (req, res) => {
     }
 
     console.log('Received FB data from landing page:', { fbclid, fbp, fbc });
+    console.log('Session before storing FB data:', req.session);
 
     const timestamp = Math.floor(Date.now() / 1000);
     
@@ -418,7 +419,7 @@ app.post('/api/store-fb-data', async (req, res) => {
     });
   } catch (err) {
     console.error('Error storing FB data:', err);
-        return res.status(500).json({ error: 'Failed to store FB data' });
+    return res.status(500).json({ error: 'Failed to store FB data' });
   }
 });
 
@@ -453,19 +454,20 @@ app.post('/create-donation', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Missing amount.' });
     }
 
+    console.log('Session in create-donation:', req.session);
+
     const orderId = randomTransactionId();
     const fbclid = req.session?.fbclid;
     const fbp = req.session?.fbp;
     const fbc = req.session?.fbc;
     
+    const timestamp = Math.floor(Date.now() / 1000);
+    const generatedFbp = fbp ?? `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
+    const generatedFbc = fbc ?? (fbclid ? `fb.1.${timestamp}.${fbclid}` : null);
+
     // Get client info
     const clientIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '';
     const userAgent = req.headers['user-agent'] || '';
-
-    // FIX 6: Generate fbp if not present in session
-    const timestamp = Math.floor(Date.now() / 1000);
-    const generatedFbp = fbp || `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
-    const generatedFbc = fbc || (fbclid ? `fb.1.${timestamp}.${fbclid}` : null);
 
     await dbRun(
       `INSERT INTO donations (
@@ -578,11 +580,7 @@ app.post('/api/redsys-notification', async (req, res) => {
              SET client_ip = COALESCE(client_ip, ?),
                  client_user_agent = COALESCE(client_user_agent, ?),
                  fbp = COALESCE(fbp, ?),
-                 fbc = CASE 
-                        WHEN fbclid IS NOT NULL AND fbc IS NULL 
-                        THEN ? 
-                        ELSE COALESCE(fbc, NULL)
-                      END
+                 fbc = COALESCE(fbc, CASE WHEN fbclid IS NOT NULL THEN ? ELSE NULL END)
              WHERE orderId = ?`,
             [
               req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '',
