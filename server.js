@@ -374,8 +374,8 @@ app.post('/create-donation', async (req, res) => {
 
     const form = createRedirectForm(params);
 
-    // Send back the form data to the frontend, so the frontend can redirect
-    res.json({ ok: true, form });
+    // FIX: Return the orderId along with the form data
+    res.json({ ok: true, orderId, form });
 
   } catch (err) {
     console.error('Error in /create-donation:', err);
