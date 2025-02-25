@@ -12,6 +12,11 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 
+// Ensure fetch is available (for Node versions without global fetch)
+if (!global.fetch) {
+  global.fetch = require('node-fetch');
+}
+
 // Redsys Easy – using sandbox URLs for test mode
 const { createRedsysAPI, SANDBOX_URLS, randomTransactionId } = require('redsys-easy');
 
@@ -153,8 +158,19 @@ const app = express();
 // Enable trust proxy if behind a reverse proxy
 app.set('trust proxy', true);
 
+// CORS middleware - allow any origin with credentials if needed
 app.use(cors({
-  origin: true,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    callback(null, true);
+  },
+  credentials: true
+}));
+// Handle preflight requests for all routes
+app.options('*', cors({
+  origin: function (origin, callback) {
+    callback(null, true);
+  },
   credentials: true
 }));
 
@@ -207,8 +223,8 @@ const dbRun = (...args) => new Promise((resolve, reject) => {
     resolve(this);
   });
 });
-const dbGet = promisify(db.get).bind(db);
-const dbAll = promisify(db.all).bind(db);
+const dbGet = require('util').promisify(db.get).bind(db);
+const dbAll = require('util').promisify(db.all).bind(db);
 
 // Initialize database schema and perform migrations
 async function initializeDatabase() {
