@@ -1,9 +1,11 @@
+
 /********************************
  * server.js
  ********************************/
 const express = require('express');
 const path = require('path');
-const session = require('express-session');
+// Removed session since we're not using it
+// const session = require('express-session');
 const sqlite3 = require('sqlite3').verbose();
 const morgan = require('morgan');
 const { promisify } = require('util');
@@ -25,10 +27,10 @@ const FACEBOOK_TEST_EVENT_CODE = process.env.FACEBOOK_TEST_EVENT_CODE || '';
 
 const SESSION_SECRET = process.env.SESSION_SECRET || 'somesecret';
 
-const MERCHANT_CODE = process.env.MERCHANT_CODE || '367149531';
+const MERCHANT_CODE = process.env.MERCHANT_CODE || 'YOUR_MERCHANT_CODE';
 const TERMINAL = process.env.TERMINAL || '1';
-const SECRET_KEY = process.env.SECRET_KEY || 'sq7HjrUOBfKmC576ILgskD5srU870gJ7';
-const MERCHANT_MERCHANTURL = process.env.MERCHANT_MERCHANTURL || 'https://fbcid-production.up.railway.app/redsys-notification';
+const SECRET_KEY = process.env.SECRET_KEY || 'YOUR_SECRET_KEY';
+const MERCHANT_MERCHANTURL = process.env.MERCHANT_MERCHANTURL || 'https://yourdomain.com/redsys-notification';
 const MERCHANT_URLOK = process.env.MERCHANT_URLOK || 'https://yourdomain.com/thanks.html';
 const MERCHANT_URLKO = process.env.MERCHANT_URLKO || 'https://yourdomain.com/error.html';
 
@@ -38,7 +40,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-  // Allow all origins
+  // Allow all origins and credentials
   origin: (origin, callback) => {
     callback(null, true);
   },
@@ -53,19 +55,14 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Removed session middleware since we're not using sessions
+/*
 app.use(
   session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-      sameSite: 'strict',
-    },
+    // session options
   })
 );
+*/
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -110,7 +107,7 @@ db.serialize(() => {
     )`
   );
 
-  // admin_users table
+  // admin_users table (if needed)
   db.run(
     `CREATE TABLE IF NOT EXISTS admin_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -161,15 +158,7 @@ const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
 async function sendFacebookConversionEvent(donationRow) {
   const fetch = (await import('node-fetch')).default;
 
-  // Hashing helper (if needed later)
-  function sha256(value) {
-    return crypto
-      .createHash('sha256')
-      .update(value.trim().toLowerCase())
-      .digest('hex');
-  }
-
-  // Prepare userData and log it
+  // Prepare userData
   const userData = {};
   if (donationRow.fbp) {
     userData.fbp = donationRow.fbp;
@@ -185,7 +174,7 @@ async function sendFacebookConversionEvent(donationRow) {
   }
   console.log('[FB Conversion] User data prepared:', userData);
 
-  const eventSourceUrl = 'https://example.com/orderComplete'; // Adjust if necessary
+  const eventSourceUrl = 'https://yourdomain.com/orderComplete'; // Adjust if necessary
   const finalEventId = donationRow.order_id || String(donationRow.id);
 
   const eventData = {
@@ -265,49 +254,11 @@ async function attemptFacebookConversion(donationRow) {
 // ROUTES
 // ------------------------------------------------------
 
-// Route to collect fbp, fbc, fbclid
-app.post('/api/store-fb-data', async (req, res) => {
-  try {
-    let { fbclid, fbp, fbc } = req.body;
-    console.log('[Store FB Data] Received from browser:', { fbclid, fbp, fbc });
-
-    if (!req.session) {
-      console.error('[Store FB Data] Session not available.');
-      return res.status(500).json({ error: 'Session not available.' });
-    }
-
-    const timestamp = Math.floor(Date.now() / 1000);
-    if (!fbp) {
-      const randomPart = Math.floor(Math.random() * 1e16);
-      fbp = `fb.1.${timestamp}.${randomPart}`;
-      console.log('[Store FB Data] fbp generated:', fbp);
-    }
-    if (!fbc && fbclid) {
-      fbc = `fb.1.${timestamp}.${fbclid}`;
-      console.log('[Store FB Data] fbc generated:', fbc);
-    }
-
-    req.session.fbp = fbp;
-    req.session.fbc = fbc;
-    req.session.fbclid = fbclid || null;
-
-    console.log('[Store FB Data] Stored in session:', { fbclid, fbp, fbc });
-    return res.json({
-      message: 'FB data stored in session',
-      fbclid,
-      fbp,
-      fbc
-    });
-  } catch (err) {
-    console.error('[Store FB Data] Error storing FB data:', err);
-    return res.status(500).json({ error: 'Failed to store FB data' });
-  }
-});
-
 // Endpoint to create a donation and store donor data in SQLite
 app.post('/create-donation', async (req, res) => {
   try {
-    const { amount } = req.body;
+    // Now accepting fbclid, fbp, fbc directly from the request body
+    const { amount, fbclid, fbp, fbc } = req.body;
     console.log('[Create Donation] Donate button clicked with amount:', amount);
 
     if (!amount) {
@@ -318,12 +269,6 @@ app.post('/create-donation', async (req, res) => {
     // Generate a unique order ID
     const orderId = randomTransactionId();
     console.log('[Create Donation] Generated order ID:', orderId);
-
-    // Retrieve fbp, fbc, fbclid from session
-    const fbp = req.session ? req.session.fbp || null : null;
-    const fbc = req.session ? req.session.fbc || null : null;
-    const fbclid = req.session ? req.session.fbclid || null : null;
-    console.log('[Create Donation] Retrieved from session:', { fbclid, fbp, fbc });
 
     // Get client IP and user agent
     const clientIp =
@@ -357,9 +302,9 @@ app.post('/create-donation', async (req, res) => {
       [
         orderId,
         amountCents,
-        fbclid,
-        fbp,
-        fbc,
+        fbclid || null,
+        fbp || null,
+        fbc || null,
         clientIp,
         clientUserAgent,
         0,
@@ -525,7 +470,7 @@ app.post('/redsys-notification', async (req, res, next) => {
           [
             conversionResult.attempts,
             now,
-            conversionResult.error ? conversionResult.error.message : '',
+            conversionResult.error ? result.error.message : '',
             logId,
           ]
         );
@@ -542,9 +487,8 @@ app.post('/redsys-notification', async (req, res, next) => {
   }
 });
 
-// ADMIN AUTH & ENDPOINTS
-// ... (Keep as in your original code)
-// ...
+// ADMIN AUTH & ENDPOINTS (If needed)
+// ... 
 
 // BACKGROUND WORKER: Retry Pending FB Conversions
 setInterval(async () => {
