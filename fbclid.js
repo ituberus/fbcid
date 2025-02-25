@@ -1,11 +1,9 @@
-
 (function() {
   // === CONFIGURATION ===
   // Update with your Railway URL.
   const RAILWAY_BASE_URL = 'https://fbcid-production.up.railway.app';
- 
   const RAILWAY_API_SLUG = '/api/store-fb-data';
-  // Your actual Facebook Pixel ID, i think this is correct:
+  // Your actual Facebook Pixel ID
   const FACEBOOK_PIXEL_ID = '1155603432794001';
 
   function getQueryParam(param) {
@@ -24,6 +22,36 @@
       expires = "; expires=" + date.toUTCString();
     }
     document.cookie = name + "=" + encodeURIComponent(value) + expires + "; path=/";
+  }
+
+  /**
+   * Enhanced data sending function with Beacon API support
+   */
+  function sendFBData(data) {
+    // First, try regular POST
+    fetch(RAILWAY_BASE_URL + RAILWAY_API_SLUG, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include', // Important so the session cookie is used
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+      console.log('FB data stored in session:', result);
+      // If there's a beacon URL, use it as backup
+      if (result.beaconUrl) {
+        navigator.sendBeacon(RAILWAY_BASE_URL + result.beaconUrl, JSON.stringify(data));
+      }
+    })
+    .catch(error => {
+      console.error('Error storing FB data:', error);
+      // On error, try beacon as fallback
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(RAILWAY_BASE_URL + '/api/beacon-fb-data', JSON.stringify(data));
+      }
+    });
   }
 
   // === 1) Capture fbclid from the URL and store in a cookie ===
@@ -48,7 +76,7 @@
   // Initialize the Pixel
   fbq('init', FACEBOOK_PIXEL_ID);
 
-  // === 3) Manually generate _fbc if fbclid is present and we don’t already have _fbc ===
+  // === 3) Manually generate _fbc if fbclid is present and we don't already have _fbc ===
   // (A safeguard in case Pixel is blocked or slow)
   if (fbclid && document.cookie.indexOf('_fbc=') === -1) {
     const timestamp = Math.floor(Date.now() / 1000);
@@ -56,7 +84,7 @@
     setCookie('_fbc', newFbc, 30);
   }
 
-  // === 4) Poll for _fbp and _fbc for up to 1.5s, then send to backend ===
+  // === 4) Enhanced polling with Beacon API fallback ===
   const pollInterval = 300; // check every 300 ms
   const maxWait = 1500;     // total 1.5 seconds
   const startTime = Date.now();
@@ -71,19 +99,19 @@
 
     // If we found both or we've waited long enough, send to backend
     if ((fbp && fbc) || (Date.now() - startTime >= maxWait)) {
-      fetch(RAILWAY_BASE_URL + RAILWAY_API_SLUG, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Important so the session cookie is used
-        body: JSON.stringify({ fbclid, fbp, fbc })
-      })
-      .then(res => res.json())
-      .then(data => {
-        console.log('FB data stored in session:', data);
-      })
-      .catch(err => console.error('Error storing FB data:', err));
-
+      // Use the enhanced sending function
+      sendFBData({ fbclid, fbp, fbc });
       clearInterval(pollHandle);
+      
+      // Add page unload handler for extra reliability
+      if (navigator.sendBeacon) {
+        window.addEventListener('unload', () => {
+          navigator.sendBeacon(
+            RAILWAY_BASE_URL + '/api/beacon-fb-data', 
+            JSON.stringify({ fbclid, fbp, fbc })
+          );
+        });
+      }
     }
   }, pollInterval);
 })();
