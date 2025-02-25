@@ -15,8 +15,11 @@ const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const { promisify } = require('util');
 const crypto = require('crypto');
-const fetch = require('node-fetch'); // for FB conversion API
 require('dotenv').config();
+
+// Declare global fetch variable; it will be set via dynamic import below.
+// (Do not use require('node-fetch') as node-fetch v3 is an ES module)
+let fetch;
 
 // Redsys Easy library
 const {
@@ -58,6 +61,7 @@ const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
 // EXPRESS APP SETUP
 // ----------------------------
 // Allow all origins – fully public CORS configuration
+const app = express();
 app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json());
@@ -495,8 +499,12 @@ app.use((err, req, res, next) => {
 });
 
 // ----------------------------
-// START THE SERVER
+// START THE SERVER AFTER DYNAMIC IMPORT OF NODE-FETCH
 // ----------------------------
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+(async () => {
+  const { default: fetchImported } = await import('node-fetch');
+  fetch = fetchImported;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+})();
