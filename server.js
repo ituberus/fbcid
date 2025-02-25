@@ -131,7 +131,7 @@ app.use(session({
   }),
   secret: SESSION_SECRET,
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true, // Changed to true to ensure session data is saved
   cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     secure: NODE_ENV === 'production',
@@ -166,8 +166,8 @@ const dbRun = (...args) => new Promise((resolve, reject) => {
     resolve(this);
   });
 });
-const dbGet = promisify(db.get).bind(db);
-const dbAll = promisify(db.all).bind(db);
+const dbGet = require('util').promisify(db.get).bind(db);
+const dbAll = require('util').promisify(db.all).bind(db);
 
 // Initialize database schema and perform migrations
 async function initializeDatabase() {
@@ -235,32 +235,36 @@ async function sendFacebookConversionEvent(donation, req = null) {
     }
 
     const timestamp = Math.floor(Date.now() / 1000);
-    
-    // FIX 1: Generate or update fbp/fbc if missing
+
     let { fbp, fbc, fbclid } = donation;
-    
+
     // Always ensure fbp exists
     if (!fbp) {
       fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
-      await dbRun(
-        'UPDATE donations SET fbp = ? WHERE orderId = ?',
-        [fbp, donation.orderId]
-      );
+      try {
+        await dbRun(
+          'UPDATE donations SET fbp = ? WHERE orderId = ?',
+          [fbp, donation.orderId]
+        );
+      } catch (err) {
+        console.error(`Error updating fbp for order ${donation.orderId}:`, err);
+      }
       donation.fbp = fbp;
     }
 
     // Generate fbc if fbclid exists but fbc doesn't
     if (!fbc && fbclid) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
-      await dbRun(
-        'UPDATE donations SET fbc = ? WHERE orderId = ?',
-        [fbc, donation.orderId]
-      );
+      try {
+        await dbRun(
+          'UPDATE donations SET fbc = ? WHERE orderId = ?',
+          [fbc, donation.orderId]
+        );
+      } catch (err) {
+        console.error(`Error updating fbc for order ${donation.orderId}:`, err);
+      }
       donation.fbc = fbc;
     }
-
-    // Dynamically import fetch
-    const { default: fetch } = await import('node-fetch');
 
     // Parse amount from Redsys data
     let amount = donation.amount;
@@ -284,7 +288,6 @@ async function sendFacebookConversionEvent(donation, req = null) {
     // Hash the country value using SHA256
     const hashedCountry = crypto.createHash('sha256').update(country).digest('hex');
 
-    // FIX 2: Ensure we're using the most up-to-date values
     const eventData = {
       event_name: 'Purchase',
       event_time: timestamp,
@@ -295,7 +298,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
         client_ip_address: clientIp,
         client_user_agent: userAgent,
         fbp: donation.fbp,
-        fbc: donation.fbc, // This will now have the correct value
+        fbc: donation.fbc,
         country: hashedCountry
       },
       custom_data: {
@@ -304,17 +307,17 @@ async function sendFacebookConversionEvent(donation, req = null) {
       }
     };
 
-    // FIX 3: Include fbclid in custom_data if it exists
+    // Ensure fbclid is included if it exists
     if (fbclid) {
       eventData.custom_data.fbclid = fbclid;
     }
+
+    console.log('Sending FB conversion event:', JSON.stringify(eventData, null, 2));
 
     const payload = { data: [eventData] };
     if (FACEBOOK_TEST_EVENT_CODE) {
       payload.test_event_code = FACEBOOK_TEST_EVENT_CODE;
     }
-
-    console.log('Sending FB conversion event:', JSON.stringify(payload, null, 2));
 
     const url = `https://graph.facebook.com/v15.0/${FACEBOOK_PIXEL_ID}/events?access_token=${FACEBOOK_ACCESS_TOKEN}`;
     const response = await fetch(url, {
@@ -383,18 +386,17 @@ app.post('/api/store-fb-data', async (req, res) => {
     }
 
     console.log('Received FB data from landing page:', { fbclid, fbp, fbc });
-    console.log('Session before storing FB data:', req.session);
 
     const timestamp = Math.floor(Date.now() / 1000);
     
-    // FIX 4: Generate fbp if not provided
+    // Ensure fbp exists
     if (!fbp) {
       fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
       console.log(`Generated fbp: ${fbp}`);
     }
     
-    // FIX 5: Generate fbc if fbclid exists but fbc doesn't
-    if (!fbc && fbclid) {
+    // Always generate fbc if fbclid exists and fbc is missing
+    if (fbclid && !fbc) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
       console.log(`Generated fbc: ${fbc}`);
     }
@@ -454,20 +456,19 @@ app.post('/create-donation', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Missing amount.' });
     }
 
-    console.log('Session in create-donation:', req.session);
-
     const orderId = randomTransactionId();
     const fbclid = req.session?.fbclid;
     const fbp = req.session?.fbp;
     const fbc = req.session?.fbc;
     
-    const timestamp = Math.floor(Date.now() / 1000);
-    const generatedFbp = fbp ?? `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
-    const generatedFbc = fbc ?? (fbclid ? `fb.1.${timestamp}.${fbclid}` : null);
-
     // Get client info
     const clientIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '';
     const userAgent = req.headers['user-agent'] || '';
+
+    // Generate fbp/fbc if not present in session
+    const timestamp = Math.floor(Date.now() / 1000);
+    const generatedFbp = fbp || `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
+    const generatedFbc = fbc || (fbclid ? `fb.1.${timestamp}.${fbclid}` : null);
 
     await dbRun(
       `INSERT INTO donations (
@@ -513,8 +514,8 @@ app.get('/iframe-sis', async (req, res) => {
 
     const form = createRedirectForm(params);
     
-    const html = `
-      <!DOCTYPE html>
+    const html = 
+      `<!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="UTF-8">
@@ -528,8 +529,7 @@ app.get('/iframe-sis', async (req, res) => {
           <input type="hidden" name="Ds_Signature" value="${form.body.Ds_Signature}" />
         </form>
       </body>
-      </html>
-    `;
+      </html>`;
     res.send(html);
   } catch (err) {
     console.error('Error in /iframe-sis:', err);
@@ -580,7 +580,11 @@ app.post('/api/redsys-notification', async (req, res) => {
              SET client_ip = COALESCE(client_ip, ?),
                  client_user_agent = COALESCE(client_user_agent, ?),
                  fbp = COALESCE(fbp, ?),
-                 fbc = COALESCE(fbc, CASE WHEN fbclid IS NOT NULL THEN ? ELSE NULL END)
+                 fbc = CASE 
+                        WHEN fbclid IS NOT NULL AND fbc IS NULL 
+                        THEN ? 
+                        ELSE COALESCE(fbc, NULL)
+                      END
              WHERE orderId = ?`,
             [
               req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '',
