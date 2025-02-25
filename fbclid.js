@@ -1,140 +1,150 @@
 
 (function() {
-    // === CONFIGURATION ===
-    // Your actual Facebook Pixel ID
-    const FACEBOOK_PIXEL_ID = '1155603432794001';
+  // === CONFIGURATION ===
+  // Your actual Facebook Pixel ID
+  const FACEBOOK_PIXEL_ID = '1155603432794001';
 
-    // Utility function to get query parameters
-    function getQueryParam(param) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(param);
+  /**
+   * Retrieves the value of a query parameter from the URL.
+   * @param {string} param - The name of the query parameter.
+   * @returns {string|null} - The value of the query parameter or null if not found.
+   */
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+
+  /**
+   * Sets a cookie with the specified name, value, and expiration in days.
+   * @param {string} name - The name of the cookie.
+   * @param {string} value - The value to be stored in the cookie.
+   * @param {number} days - Number of days until the cookie expires.
+   */
+  function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+      const date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      expires = "; expires=" + date.toUTCString();
     }
+    document.cookie = name + "=" + encodeURIComponent(value) + expires + "; path=/";
+    console.log(`[setCookie] Set cookie: ${name}=${value}`);
+  }
 
-    // Utility function to set cookies
-    function setCookie(name, value, days) {
-        let expires = "";
-        if (days) {
-            const date = new Date();
-            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            expires = "; expires=" + date.toUTCString();
-        }
-        document.cookie = name + "=" + encodeURIComponent(value) + expires + "; path=/";
-        console.log(`[Cookie Set] ${name}=${value}`);
+  /**
+   * Stores Facebook data in localStorage.
+   * @param {Object} data - An object containing fbclid, fbp, and fbc.
+   */
+  function storeFacebookData(data) {
+    Object.entries(data).forEach(([key, value]) => {
+      if (value) {
+        window.localStorage.setItem(key, value);
+        console.log(`[storeFacebookData] Stored in localStorage: ${key}=${value}`);
+      }
+    });
+  }
+
+  /**
+   * Retrieves the value of a specific cookie.
+   * @param {string} name - The name of the cookie.
+   * @returns {string|null} - The value of the cookie or null if not found.
+   */
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    if (match) {
+      return decodeURIComponent(match[2]);
     }
+    return null;
+  }
 
-    // Utility function to store Facebook data in localStorage
-    function storeFacebookData(data) {
-        Object.entries(data).forEach(([key, value]) => {
-            if (value) {
-                window.localStorage.setItem(key, value);
-                console.log(`[LocalStorage] Set ${key}=${value}`);
-            }
-        });
-    }
+  // === 1) Capture fbclid from the URL, store in cookie and localStorage ===
+  const fbclid = getQueryParam('fbclid');
+  if (fbclid) {
+    console.log(`[fbclid] Found fbclid in URL: ${fbclid}`);
+    setCookie('fbclid', fbclid, 30);
+    window.localStorage.setItem('fbclid', fbclid);
+  } else {
+    console.log('[fbclid] No fbclid found in URL.');
+  }
 
-    // === 1) Capture fbclid from the URL, store in cookie and localStorage ===
-    const fbclid = getQueryParam('fbclid');
-    if (fbclid) {
-        console.log('[FBID Capture] fbclid found in URL:', fbclid);
-        setCookie('fbclid', fbclid, 30);
-        storeFacebookData({ fbclid });
+  // === 2) Load Facebook Pixel (to generate _fbp if not blocked) ===
+  (function(f, b, e, v, n, t, s) {
+    if (f.fbq) return;
+    n = f.fbq = function() {
+      n.callMethod ?
+        n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+    };
+    if (!f._fbq) f._fbq = n;
+    n.push = n;
+    n.loaded = !0;
+    n.version = '2.0';
+    n.queue = [];
+    t = b.createElement(e);
+    t.async = !0;
+    t.src = v;
+    s = b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t, s);
+    console.log('[Facebook Pixel] Pixel script loaded.');
+  })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+
+  // Initialize the Pixel
+  fbq('init', FACEBOOK_PIXEL_ID);
+  console.log(`[Facebook Pixel] Initialized with ID: ${FACEBOOK_PIXEL_ID}`);
+
+  // === 3) Manually generate _fbc if fbclid is present and _fbc not in cookie ===
+  const existingFbc = getCookie('_fbc');
+  if (fbclid && !existingFbc) {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const newFbc = `fb.1.${timestamp}.${fbclid}`;
+    setCookie('_fbc', newFbc, 30);
+    console.log(`[_fbc] Generated and set _fbc: ${newFbc}`);
+  } else {
+    if (existingFbc) {
+      console.log(`[_fbc] Existing _fbc found: ${existingFbc}`);
     } else {
-        console.log('[FBID Capture] No fbclid found in URL.');
+      console.log('[_fbc] No fbclid present; _fbc not generated.');
     }
+  }
 
-    // === 2) Load Facebook Pixel (to generate _fbp if not blocked) ===
-    !(function(f, b, e, v, n, t, s) {
-        if (f.fbq) return;
-        n = f.fbq = function() {
-            n.callMethod ?
-                n.callMethod.apply(n, arguments) :
-                n.queue.push(arguments);
-        };
-        if (!f._fbq) f._fbq = n;
-        n.push = n;
-        n.loaded = !0;
-        n.version = '2.0';
-        n.queue = [];
-        t = b.createElement(e);
-        t.async = !0;
-        t.src = v;
-        s = b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t, s);
-    })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+  // === 4) Retrieve _fbp and _fbc from cookies and store in localStorage ===
+  // Ensure that the Pixel has had enough time to set _fbp and _fbc
+  // Using a promise to wait until Pixel initializes and sets cookies
+  function waitForPixel(callback) {
+    const maxAttempts = 10;
+    let attempts = 0;
+    const interval = setInterval(() => {
+      const fbp = getCookie('_fbp');
+      const fbc = getCookie('_fbc');
+      if (fbp || fbc || attempts >= maxAttempts) {
+        clearInterval(interval);
+        callback(fbp, fbc);
+      }
+      attempts++;
+    }, 100); // Check every 100ms
+  }
 
-    // Initialize the Pixel and track PageView
-    fbq('init', FACEBOOK_PIXEL_ID);
-    fbq('track', 'PageView');
-    console.log('[Facebook Pixel] Initialized and PageView tracked.');
-
-    // === 3) Manually generate _fbc if fbclid is present and we don't already have _fbc ===
-    const existingFbc = document.cookie.match(/(^|;)\s*_fbc=([^;]+)/);
-    if (fbclid && !existingFbc) {
-        const timestamp = Math.floor(Date.now() / 1000);
-        const newFbc = `fb.1.${timestamp}.${fbclid}`;
-        setCookie('_fbc', newFbc, 30);
-        console.log('[FB Conversion] _fbc generated from fbclid:', newFbc);
-    } else if (existingFbc) {
-        console.log('[FB Conversion] Existing _fbc found:', decodeURIComponent(existingFbc[2]));
+  waitForPixel((fbp, fbc) => {
+    if (fbp) {
+      window.localStorage.setItem('fbp', fbp);
+      console.log(`[fbp] Stored in localStorage: ${fbp}`);
     } else {
-        console.log('[FB Conversion] No fbclid present to generate _fbc.');
+      console.warn('[fbp] _fbp not found.');
     }
 
-    // === 4) Immediately Store _fbp and _fbc to localStorage if available ===
-    function saveFbpFbcToLocalStorage() {
-        const fbpMatch = document.cookie.match(/(^|;)\s*_fbp=([^;]+)/);
-        const fbcMatch = document.cookie.match(/(^|;)\s*_fbc=([^;]+)/);
-        const fbp = fbpMatch ? decodeURIComponent(fbpMatch[2]) : null;
-        const fbc = fbcMatch ? decodeURIComponent(fbcMatch[2]) : null;
-
-        if (fbp) {
-            window.localStorage.setItem('fbp', fbp);
-            console.log('[LocalStorage] Stored fbp:', fbp);
-        } else {
-            console.log('[LocalStorage] fbp not found in cookies.');
-        }
-
-        if (fbc) {
-            window.localStorage.setItem('fbc', fbc);
-            console.log('[LocalStorage] Stored fbc:', fbc);
-        } else {
-            console.log('[LocalStorage] fbc not found in cookies.');
-        }
+    if (fbc) {
+      window.localStorage.setItem('fbc', fbc);
+      console.log(`[fbc] Stored in localStorage: ${fbc}`);
+    } else {
+      console.warn('[fbc] _fbc not found.');
     }
 
-    // Attempt to save immediately upon page load
-    saveFbpFbcToLocalStorage();
-
-    // === 5) Polling as a fallback to capture _fbp and _fbc if not captured immediately ===
-    const pollInterval = 300; // milliseconds
-    const maxWait = 3000; // milliseconds (3 seconds)
-    const startTime = Date.now();
-
-    const pollHandle = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        console.log(`[Polling] Attempting to retrieve _fbp and _fbc. Elapsed time: ${elapsed}ms`);
-
-        const fbpMatch = document.cookie.match(/(^|;)\s*_fbp=([^;]+)/);
-        const fbcMatch = document.cookie.match(/(^|;)\s*_fbc=([^;]+)/);
-        const fbp = fbpMatch ? decodeURIComponent(fbpMatch[2]) : null;
-        const fbc = fbcMatch ? decodeURIComponent(fbcMatch[2]) : null;
-
-        if (fbp && !window.localStorage.getItem('fbp')) {
-            window.localStorage.setItem('fbp', fbp);
-            console.log('[LocalStorage] Stored fbp via polling:', fbp);
-        }
-
-        if (fbc && !window.localStorage.getItem('fbc')) {
-            window.localStorage.setItem('fbc', fbc);
-            console.log('[LocalStorage] Stored fbc via polling:', fbc);
-        }
-
-        // Stop polling if both are found or max wait time exceeded
-        if ((fbp && fbc) || (elapsed >= maxWait)) {
-            clearInterval(pollHandle);
-            console.log('[Polling] Stopped polling.');
-        }
-    }, pollInterval);
+    // Final log of all Facebook data stored
+    const storedData = {
+      fbclid: window.localStorage.getItem('fbclid') || null,
+      fbp: window.localStorage.getItem('fbp') || null,
+      fbc: window.localStorage.getItem('fbc') || null
+    };
+    console.log('[Facebook Data] Final stored data in localStorage:', storedData);
+  });
 
 })();
-
