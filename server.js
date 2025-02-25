@@ -252,6 +252,9 @@ async function sendFacebookConversionEvent(donation, req = null) {
         'UPDATE donations SET fbc = ? WHERE orderId = ?',
         [donation.fbc, donation.orderId]
       );
+      // Re-read donation row to ensure updated fbc is available
+      const updatedDonation = await dbGet('SELECT * FROM donations WHERE orderId = ?', [donation.orderId]);
+      donation.fbc = updatedDonation.fbc;
     }
 
     // Dynamically import fetch
