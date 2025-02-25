@@ -750,10 +750,19 @@
                       const selectedAmount = pressedBtn.value;
                       const baseUrl = window.BACKEND_URL || "";
 
-                      // We'll send only { amount }
-                      const dataToStore = {
-                        amount: selectedAmount
-                      };
+                    // Get Facebook data from localStorage
+const fbclid = window.localStorage.getItem('fbclid');
+const fbp = window.localStorage.getItem('fbp');
+const fbc = window.localStorage.getItem('fbc');
+
+// Prepare the donation data with the amount and Facebook parameters
+const dataToStore = {
+  amount: selectedAmount,
+  fbclid: fbclid,
+  fbp: fbp,
+  fbc: fbc
+};
+
 
                       try {
                         // POST to create-donation
