@@ -122,6 +122,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// IMPORTANT: Initialize session middleware BEFORE any middleware that uses req.session
+app.use(session({
+  store: new SQLiteStore({
+    dir: './',
+    db: 'sessions.sqlite',
+    table: 'sessions'
+  }),
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true, // Ensure session data is saved
+  cookie: {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    secure: NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax'
+  }
+}));
+
 // ---------------------------
 // Facebook Parameter Capture Middleware
 // ---------------------------
@@ -155,24 +173,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-// Session configuration with SQLite store
-app.use(session({
-  store: new SQLiteStore({
-    dir: './',
-    db: 'sessions.sqlite',
-    table: 'sessions'
-  }),
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true, // Ensure session data is saved
-  cookie: {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    secure: NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: 'lax'
-  }
-}));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'views')));
