@@ -143,8 +143,9 @@ app.use(session({
 // ---------------------------
 // Facebook Parameter Capture Middleware
 // ---------------------------
-// This middleware checks for a fbclid query parameter and, if present,
-// stores it in the session. (Note: Most fb data will be posted via the landing page.)
+// This middleware runs for every request and looks for fbclid in the query string.
+// If found, it stores fbclid, generates fbc (if not present), and ensures fbp exists.
+// FIX: We now wait for req.session.save() to finish before calling next()
 app.use((req, res, next) => {
   try {
     const fbclid = req.query.fbclid;
@@ -158,15 +159,18 @@ app.use((req, res, next) => {
         req.session.fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
       }
       req.session.save(err => {
-        if (err) console.error('Error saving Facebook parameters to session:', err);
-        else {
+        if (err) {
+          console.error('Error saving Facebook parameters to session:', err);
+        } else {
           console.log('Facebook parameters saved to session:', {
             fbclid: req.session.fbclid,
             fbc: req.session.fbc,
             fbp: req.session.fbp
           });
         }
+        next(); // Wait until session is saved before moving on
       });
+      return; // Prevent calling next() twice
     }
   } catch (err) {
     console.error('Error in Facebook parameter capture middleware:', err);
@@ -193,6 +197,7 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
   }
 });
 
+// Promisify database functions
 const dbRun = (...args) => new Promise((resolve, reject) => {
   db.run(...args, function(err) {
     if (err) return reject(err);
@@ -202,6 +207,7 @@ const dbRun = (...args) => new Promise((resolve, reject) => {
 const dbGet = promisify(db.get).bind(db);
 const dbAll = promisify(db.all).bind(db);
 
+// Initialize database schema and perform migrations
 async function initializeDatabase() {
   const migrations = [
     `CREATE TABLE IF NOT EXISTS donations (
@@ -267,6 +273,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
     }
 
     const timestamp = Math.floor(Date.now() / 1000);
+    // Log the raw FB data from the donation
     console.log('Raw donation FB data:', {
       fbclid: donation.fbclid,
       fbp: donation.fbp,
@@ -275,17 +282,20 @@ async function sendFacebookConversionEvent(donation, req = null) {
 
     let { fbp, fbc, fbclid } = donation;
 
+    // Ensure fbp exists and is properly formatted
     if (!fbp || !fbp.startsWith('fb.1.')) {
       fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
       await dbRun('UPDATE donations SET fbp = ? WHERE orderId = ?', [fbp, donation.orderId]);
     }
 
+    // Generate fbc from fbclid if needed
     if (fbclid && (!fbc || !fbc.startsWith('fb.1.'))) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
       console.log(`Generated fbc for order ${donation.orderId}: ${fbc}`);
       await dbRun('UPDATE donations SET fbc = ? WHERE orderId = ?', [fbc, donation.orderId]);
     }
 
+    // Parse amount from Redsys data if available
     let amount = donation.amount;
     if (donation.redsys_data) {
       try {
@@ -296,12 +306,15 @@ async function sendFacebookConversionEvent(donation, req = null) {
       }
     }
 
+    // Get client info
     const clientIp = donation.client_ip || (req && (req.headers['x-forwarded-for'] || req.connection?.remoteAddress)) || '';
     const userAgent = donation.client_user_agent || (req && req.headers['user-agent']) || '';
 
+    // Hash country (from IP lookup)
     const country = await getCountryFromIP(clientIp);
     const hashedCountry = crypto.createHash('sha256').update(country).digest('hex');
 
+    // Build the user_data object
     const user_data = {
       client_ip_address: clientIp,
       client_user_agent: userAgent,
@@ -359,6 +372,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
   }
 }
 
+// Exponential backoff retry for FB conversion
 async function attemptFacebookConversion(donation, req = null) {
   const maxAttempts = 3;
   let attempt = 0;
@@ -393,18 +407,7 @@ async function attemptFacebookConversion(donation, req = null) {
 // ---------------------------
 app.post('/api/store-fb-data', async (req, res) => {
   try {
-    // First check the body; if not present, try cookies
     let { fbclid, fbp, fbc } = req.body;
-    if (!fbclid) {
-      fbclid = req.cookies.fbclid || null;
-    }
-    if (!fbp) {
-      fbp = req.cookies._fbp || null;
-    }
-    if (!fbc) {
-      fbc = req.cookies._fbc || null;
-    }
-
     if (!req.session) {
       return res.status(500).json({ error: 'Session not available.' });
     }
@@ -413,13 +416,13 @@ app.post('/api/store-fb-data', async (req, res) => {
 
     const timestamp = Math.floor(Date.now() / 1000);
 
-    // Validate and generate fbp if needed
+    // Validate and format fbp
     if (!fbp || !fbp.startsWith('fb.1.')) {
       fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
       console.log(`Generated fbp: ${fbp}`);
     }
 
-    // Validate and generate fbc if fbclid is provided and fbc is missing/invalid
+    // Validate and format fbc if fbclid is provided
     if (fbclid && (!fbc || !fbc.startsWith('fb.1.'))) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
       console.log(`Generated fbc: ${fbc}`);
@@ -488,13 +491,14 @@ app.post('/create-donation', async (req, res) => {
     const orderId = randomTransactionId();
     const timestamp = Math.floor(Date.now() / 1000);
 
-    // Get FB data from session; if missing, fallback to cookies
-    const fbclid = req.session?.fbclid || req.cookies.fbclid || null;
-    let fbp = req.session?.fbp || req.cookies._fbp || `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
-    let fbc = req.session?.fbc || req.cookies._fbc || (fbclid ? `fb.1.${timestamp}.${fbclid}` : null);
+    // Get FB data from session with fallbacks
+    const fbclid = req.session?.fbclid || null;
+    let fbp = req.session?.fbp || `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
+    let fbc = req.session?.fbc || (fbclid ? `fb.1.${timestamp}.${fbclid}` : null);
 
     console.log('Creating donation with FB data:', { fbclid, fbp, fbc });
 
+    // Get client info
     const clientIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '';
     const userAgent = req.headers['user-agent'] || '';
 
@@ -583,11 +587,13 @@ app.post('/api/redsys-notification', async (req, res) => {
       return res.status(400).send('Missing orderId');
     }
 
+    // Store the complete Redsys response
     await dbRun('UPDATE donations SET redsys_data = ? WHERE orderId = ?', [JSON.stringify(result), orderId]);
 
     if (responseCode < 100) {
       console.log(`Payment SUCCESS for order ${orderId}:`, result);
 
+      // Get the donation record with FB tracking data
       const donation = await dbGet('SELECT * FROM donations WHERE orderId = ?', [orderId]);
       
       if (!donation) {
@@ -603,6 +609,7 @@ app.post('/api/redsys-notification', async (req, res) => {
       });
 
       if (donation.fb_conversion_sent === 0) {
+        // Update client information if not already stored
         if (!donation.client_ip || !donation.client_user_agent) {
           await dbRun(
             `UPDATE donations 
@@ -625,7 +632,10 @@ app.post('/api/redsys-notification', async (req, res) => {
           );
         }
 
+        // Get updated donation data after possible updates
         const updatedDonation = await dbGet('SELECT * FROM donations WHERE orderId = ?', [orderId]);
+
+        // Log the raw notification payload
         const logResult = await dbRun(
           `INSERT INTO fb_conversion_logs (
             donation_orderId, 
@@ -813,6 +823,7 @@ process.on('uncaughtException', (err) => {
   }, 1000);
 });
 
+// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('Received SIGTERM signal. Starting graceful shutdown...');
   db.close((err) => {
