@@ -236,25 +236,27 @@ async function sendFacebookConversionEvent(donation, req = null) {
 
     const timestamp = Math.floor(Date.now() / 1000);
     
-    // Generate or update fbp/fbc if needed
-    if (!donation.fbp) {
-      const randomPart = Math.floor(Math.random() * 1e16);
-      donation.fbp = `fb.1.${timestamp}.${randomPart}`;
+    // FIX 1: Generate or update fbp/fbc if missing
+    let { fbp, fbc, fbclid } = donation;
+    
+    // Always ensure fbp exists
+    if (!fbp) {
+      fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
       await dbRun(
         'UPDATE donations SET fbp = ? WHERE orderId = ?',
-        [donation.fbp, donation.orderId]
+        [fbp, donation.orderId]
       );
+      donation.fbp = fbp;
     }
 
-    if (!donation.fbc && donation.fbclid) {
-      donation.fbc = `fb.1.${timestamp}.${donation.fbclid}`;
+    // Generate fbc if fbclid exists but fbc doesn't
+    if (!fbc && fbclid) {
+      fbc = `fb.1.${timestamp}.${fbclid}`;
       await dbRun(
         'UPDATE donations SET fbc = ? WHERE orderId = ?',
-        [donation.fbc, donation.orderId]
+        [fbc, donation.orderId]
       );
-      // Re-read donation row to ensure updated fbc is available
-      const updatedDonation = await dbGet('SELECT * FROM donations WHERE orderId = ?', [donation.orderId]);
-      donation.fbc = updatedDonation.fbc;
+      donation.fbc = fbc;
     }
 
     // Dynamically import fetch
@@ -282,6 +284,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
     // Hash the country value using SHA256
     const hashedCountry = crypto.createHash('sha256').update(country).digest('hex');
 
+    // FIX 2: Ensure we're using the most up-to-date values
     const eventData = {
       event_name: 'Purchase',
       event_time: timestamp,
@@ -292,7 +295,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
         client_ip_address: clientIp,
         client_user_agent: userAgent,
         fbp: donation.fbp,
-        fbc: donation.fbc,
+        fbc: donation.fbc, // This will now have the correct value
         country: hashedCountry
       },
       custom_data: {
@@ -301,8 +304,9 @@ async function sendFacebookConversionEvent(donation, req = null) {
       }
     };
 
-    if (donation.fbclid) {
-      eventData.custom_data.fbclid = donation.fbclid;
+    // FIX 3: Include fbclid in custom_data if it exists
+    if (fbclid) {
+      eventData.custom_data.fbclid = fbclid;
     }
 
     const payload = { data: [eventData] };
@@ -371,7 +375,7 @@ async function attemptFacebookConversion(donation, req = null) {
 // ---------------------------
 // Facebook Data Collection Routes
 // ---------------------------
-app.post('/api/store-fb-data', (req, res) => {
+app.post('/api/store-fb-data', async (req, res) => {
   try {
     let { fbclid, fbp, fbc } = req.body;
     if (!req.session) {
@@ -381,11 +385,14 @@ app.post('/api/store-fb-data', (req, res) => {
     console.log('Received FB data from landing page:', { fbclid, fbp, fbc });
 
     const timestamp = Math.floor(Date.now() / 1000);
+    
+    // FIX 4: Generate fbp if not provided
     if (!fbp) {
-      const randomPart = Math.floor(Math.random() * 1e16);
-      fbp = `fb.1.${timestamp}.${randomPart}`;
+      fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
       console.log(`Generated fbp: ${fbp}`);
     }
+    
+    // FIX 5: Generate fbc if fbclid exists but fbc doesn't
     if (!fbc && fbclid) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
       console.log(`Generated fbc: ${fbc}`);
@@ -395,6 +402,14 @@ app.post('/api/store-fb-data', (req, res) => {
     req.session.fbc = fbc;
     req.session.fbclid = fbclid || null;
 
+    // Make sure to await the session save
+    await new Promise((resolve, reject) => {
+      req.session.save(err => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
     return res.json({
       message: 'FB data stored in session',
       fbclid,
@@ -403,7 +418,7 @@ app.post('/api/store-fb-data', (req, res) => {
     });
   } catch (err) {
     console.error('Error storing FB data:', err);
-    return res.status(500).json({ error: 'Failed to store FB data' });
+        return res.status(500).json({ error: 'Failed to store FB data' });
   }
 });
 
@@ -447,12 +462,17 @@ app.post('/create-donation', async (req, res) => {
     const clientIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '';
     const userAgent = req.headers['user-agent'] || '';
 
+    // FIX 6: Generate fbp if not present in session
+    const timestamp = Math.floor(Date.now() / 1000);
+    const generatedFbp = fbp || `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
+    const generatedFbc = fbc || (fbclid ? `fb.1.${timestamp}.${fbclid}` : null);
+
     await dbRun(
       `INSERT INTO donations (
         orderId, amount, fbclid, fbp, fbc, 
         client_ip, client_user_agent
       ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [orderId, amount, fbclid, fbp, fbc, clientIp, userAgent]
+      [orderId, amount, fbclid, generatedFbp, generatedFbc, clientIp, userAgent]
     );
 
     console.log(`Created donation with orderId: ${orderId} and amount: ${amount}`);
@@ -556,15 +576,26 @@ app.post('/api/redsys-notification', async (req, res) => {
           await dbRun(
             `UPDATE donations 
              SET client_ip = COALESCE(client_ip, ?),
-                 client_user_agent = COALESCE(client_user_agent, ?)
+                 client_user_agent = COALESCE(client_user_agent, ?),
+                 fbp = COALESCE(fbp, ?),
+                 fbc = CASE 
+                        WHEN fbclid IS NOT NULL AND fbc IS NULL 
+                        THEN ? 
+                        ELSE COALESCE(fbc, NULL)
+                      END
              WHERE orderId = ?`,
             [
               req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '',
               req.headers['user-agent'] || '',
+              `fb.1.${Math.floor(Date.now() / 1000)}.${Math.floor(Math.random() * 1e16)}`,
+              donation.fbclid ? `fb.1.${Math.floor(Date.now() / 1000)}.${donation.fbclid}` : null,
               orderId
             ]
           );
         }
+
+        // Get updated donation data after possible updates
+        const updatedDonation = await dbGet('SELECT * FROM donations WHERE orderId = ?', [orderId]);
 
         // Log the raw notification payload
         const logResult = await dbRun(
@@ -577,9 +608,9 @@ app.post('/api/redsys-notification', async (req, res) => {
           [orderId, JSON.stringify(req.body), 0, 'pending']
         );
 
-        // Attempt FB conversion
+        // Attempt FB conversion with updated donation data
         console.log(`Attempting FB conversion for order ${orderId}`);
-        const conversionResult = await attemptFacebookConversion(donation, req);
+        const conversionResult = await attemptFacebookConversion(updatedDonation, req);
         const now = new Date().toISOString();
 
         if (conversionResult.success) {
