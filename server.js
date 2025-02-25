@@ -25,9 +25,9 @@ const FACEBOOK_TEST_EVENT_CODE = process.env.FACEBOOK_TEST_EVENT_CODE || '';
 
 const SESSION_SECRET = process.env.SESSION_SECRET || 'somesecret';
 
-const MERCHANT_CODE = process.env.MERCHANT_CODE || 'your-merchant-code';
+const MERCHANT_CODE = process.env.MERCHANT_CODE || '367149531';
 const TERMINAL = process.env.TERMINAL || '1';
-const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
+const SECRET_KEY = process.env.SECRET_KEY || 'sq7HjrUOBfKmC576ILgskD5srU870gJ7';
 const MERCHANT_MERCHANTURL = process.env.MERCHANT_MERCHANTURL || 'https://fbcid-production.up.railway.app/redsys-notification';
 const MERCHANT_URLOK = process.env.MERCHANT_URLOK || 'https://yourdomain.com/thanks.html';
 const MERCHANT_URLKO = process.env.MERCHANT_URLKO || 'https://yourdomain.com/error.html';
