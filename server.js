@@ -229,10 +229,7 @@ const dbAll = require('util').promisify(db.all).bind(db);
 // Initialize database schema and perform migrations
 async function initializeDatabase() {
   const migrations = [
-    // Add country column to donations table
-    `ALTER TABLE donations ADD COLUMN country TEXT`,
-    
-    // Initial schema (keeping existing tables)
+    // Initial schema (create donations table first)
     `CREATE TABLE IF NOT EXISTS donations (
       orderId TEXT PRIMARY KEY,
       amount REAL,
@@ -246,6 +243,9 @@ async function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`,
+    
+    // Add country column to donations table
+    `ALTER TABLE donations ADD COLUMN country TEXT`,
     
     `CREATE TABLE IF NOT EXISTS fb_conversion_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -287,7 +287,7 @@ async function initializeDatabase() {
     try {
       await dbRun(migration);
     } catch (err) {
-      // Ignore errors for ALTER TABLE (column might already exist)
+      // Ignore errors for ALTER TABLE if column already exists
       if (!err.message.includes('duplicate column name')) {
         console.error('Migration failed:', err);
         throw err;
