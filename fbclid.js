@@ -11,9 +11,7 @@
     return urlParams.get(param);
   }
 
-  /**
-   * Helper: Simple cookie setter
-   */
+ 
   function setCookie(name, value, days) {
     let expires = "";
     if (days) {
