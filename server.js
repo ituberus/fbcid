@@ -235,32 +235,25 @@ async function sendFacebookConversionEvent(donation, req = null) {
     }
 
     const timestamp = Math.floor(Date.now() / 1000);
-
     let { fbp, fbc, fbclid } = donation;
 
-    // Ensure fbp exists
-    if (!fbp) {
+    // Ensure fbp exists and is properly formatted
+    if (!fbp || !fbp.startsWith('fb.1.')) {
       fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
       try {
-        await dbRun(
-          'UPDATE donations SET fbp = ? WHERE orderId = ?',
-          [fbp, donation.orderId]
-        );
+        await dbRun('UPDATE donations SET fbp = ? WHERE orderId = ?', [fbp, donation.orderId]);
       } catch (err) {
         console.error(`Error updating fbp for order ${donation.orderId}:`, err);
       }
       donation.fbp = fbp;
     }
 
-    // Ensure fbc is generated from fbclid if missing
-    if (fbclid && !fbc) {
+    // Ensure fbc is generated from fbclid if missing or improperly formatted
+    if (fbclid && (!fbc || !fbc.startsWith('fb.1.'))) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
       console.log(`Generated fbc for order ${donation.orderId}: ${fbc}`);
       try {
-        await dbRun(
-          'UPDATE donations SET fbc = ? WHERE orderId = ?',
-          [fbc, donation.orderId]
-        );
+        await dbRun('UPDATE donations SET fbc = ? WHERE orderId = ?', [fbc, donation.orderId]);
       } catch (err) {
         console.error(`Error updating fbc for order ${donation.orderId}:`, err);
       }
@@ -289,6 +282,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
     // Hash the country value using SHA256
     const hashedCountry = crypto.createHash('sha256').update(country).digest('hex');
 
+    // Build the event payload. Only include fbc and fbclid if they are available and properly formatted.
     const eventData = {
       event_name: 'Purchase',
       event_time: timestamp,
@@ -299,13 +293,13 @@ async function sendFacebookConversionEvent(donation, req = null) {
         client_ip_address: clientIp,
         client_user_agent: userAgent,
         fbp,
-        fbc,
+        ...(fbc && fbc.startsWith('fb.1.') ? { fbc } : {}),
         country: hashedCountry
       },
       custom_data: {
         value: amount,
         currency: 'EUR',
-        fbclid: fbclid || null
+        ...(fbclid ? { fbclid } : {})
       }
     };
 
@@ -386,14 +380,14 @@ app.post('/api/store-fb-data', async (req, res) => {
 
     const timestamp = Math.floor(Date.now() / 1000);
 
-    // Always ensure fbp exists
-    if (!fbp) {
+    // Validate and format fbp
+    if (!fbp || !fbp.startsWith('fb.1.')) {
       fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
       console.log(`Generated fbp: ${fbp}`);
     }
 
-    // Ensure fbc is created from fbclid if missing
-    if (fbclid && !fbc) {
+    // Validate and format fbc if fbclid is provided
+    if (fbclid && (!fbc || !fbc.startsWith('fb.1.'))) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
       console.log(`Generated fbc: ${fbc}`);
     }
@@ -402,12 +396,17 @@ app.post('/api/store-fb-data', async (req, res) => {
     req.session.fbc = fbc;
     req.session.fbclid = fbclid || null;
 
-    // Make sure to await the session save
     await new Promise((resolve, reject) => {
       req.session.save(err => {
         if (err) reject(err);
         else resolve();
       });
+    });
+
+    console.log('Stored FB data in session:', {
+      fbp: req.session.fbp,
+      fbc: req.session.fbc,
+      fbclid: req.session.fbclid
     });
 
     return res.json({
@@ -457,15 +456,15 @@ app.post('/create-donation', async (req, res) => {
     const fbclid = req.session?.fbclid;
     let fbp = req.session?.fbp;
     let fbc = req.session?.fbc;
-
-    // Ensure fbp exists
     const timestamp = Math.floor(Date.now() / 1000);
-    if (!fbp) {
+
+    // Ensure proper fbp format
+    if (!fbp || !fbp.startsWith('fb.1.')) {
       fbp = `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
     }
-
-    // Ensure fbc is created from fbclid if missing
-    if (fbclid && !fbc) {
+    
+    // Ensure proper fbc format if fbclid is present
+    if (fbclid && (!fbc || !fbc.startsWith('fb.1.'))) {
       fbc = `fb.1.${timestamp}.${fbclid}`;
     }
 
@@ -574,6 +573,14 @@ app.post('/api/redsys-notification', async (req, res) => {
         console.error(`No donation found for orderId: ${orderId}`);
         return res.status(404).send('Donation not found');
       }
+
+      // Debug logging for FB tracking data
+      console.log('FB tracking data for donation:', {
+        orderId: donation.orderId,
+        fbclid: donation.fbclid,
+        fbp: donation.fbp,
+        fbc: donation.fbc
+      });
 
       if (donation.fb_conversion_sent === 0) {
         // Update client information if not already stored
