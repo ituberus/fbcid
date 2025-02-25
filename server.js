@@ -17,11 +17,8 @@ if (!global.fetch) {
   global.fetch = require('node-fetch');
 }
 
-// Redsys Easy – using sandbox URLs for test mode
-const { createRedsysAPI, SANDBOX_URLS, randomTransactionId } = require('redsys-easy');
-
 // ---------------------------
-// IP Geolocation using free services (no API key required)
+// IP Country Lookup using Free Services
 // ---------------------------
 const IP_SERVICES = [
   { url: 'http://ip-api.com/json', extract: (data) => data.countryCode },
@@ -32,7 +29,6 @@ let currentServiceIndex = 0;
 const ipCountryCache = new Map();
 const IP_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
-// Modified getCountryFromIP function with round-robin service selection
 async function getCountryFromIP(ip) {
   try {
     // Check cache first
@@ -57,17 +53,12 @@ async function getCountryFromIP(ip) {
       } catch (err) {
         console.warn(`IP service ${currentServiceIndex} failed:`, err);
       }
-      // Move to next service
       currentServiceIndex = (currentServiceIndex + 1) % IP_SERVICES.length;
       attempts++;
     }
 
     // Cache the result
-    ipCountryCache.set(ip, {
-      country,
-      timestamp: Date.now()
-    });
-
+    ipCountryCache.set(ip, { country, timestamp: Date.now() });
     return country;
   } catch (err) {
     console.error('Error getting country from IP:', err);
@@ -76,46 +67,9 @@ async function getCountryFromIP(ip) {
 }
 
 // ---------------------------
-// Background worker for IP processing
+// Redsys Easy – using sandbox URLs for test mode
 // ---------------------------
-let ipProcessingQueue = [];
-let isProcessingIPs = false;
-
-// Process all IPs in parallel
-async function processIPQueue() {
-  if (isProcessingIPs || ipProcessingQueue.length === 0) return;
-  
-  isProcessingIPs = true;
-  
-  try {
-    const promises = ipProcessingQueue.map(async ({ ip, orderId }) => {
-      try {
-        const country = await getCountryFromIP(ip);
-        if (country !== 'unknown') {
-          await dbRun(
-            'UPDATE donations SET country = ? WHERE orderId = ? AND country IS NULL',
-            [country, orderId]
-          );
-        }
-      } catch (err) {
-        console.error(`Error processing IP ${ip} for order ${orderId}:`, err);
-      }
-    });
-    
-    // Clear the queue immediately
-    ipProcessingQueue = [];
-    
-    // Wait for all requests to complete
-    await Promise.all(promises);
-  } catch (err) {
-    console.error('Error processing IP queue:', err);
-  } finally {
-    isProcessingIPs = false;
-  }
-}
-
-// Run IP processing worker more frequently (every 5 seconds)
-setInterval(processIPQueue, 5000);
+const { createRedsysAPI, SANDBOX_URLS, randomTransactionId } = require('redsys-easy');
 
 // ---------------------------
 // Environment Variables & Configuration
@@ -158,19 +112,8 @@ const app = express();
 // Enable trust proxy if behind a reverse proxy
 app.set('trust proxy', true);
 
-// CORS middleware - allow any origin with credentials if needed
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    callback(null, true);
-  },
-  credentials: true
-}));
-// Handle preflight requests for all routes
-app.options('*', cors({
-  origin: function (origin, callback) {
-    callback(null, true);
-  },
+  origin: true,
   credentials: true
 }));
 
@@ -223,13 +166,12 @@ const dbRun = (...args) => new Promise((resolve, reject) => {
     resolve(this);
   });
 });
-const dbGet = require('util').promisify(db.get).bind(db);
-const dbAll = require('util').promisify(db.all).bind(db);
+const dbGet = promisify(db.get).bind(db);
+const dbAll = promisify(db.all).bind(db);
 
 // Initialize database schema and perform migrations
 async function initializeDatabase() {
   const migrations = [
-    // Initial schema (create donations table first)
     `CREATE TABLE IF NOT EXISTS donations (
       orderId TEXT PRIMARY KEY,
       amount REAL,
@@ -243,10 +185,6 @@ async function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`,
-    
-    // Add country column to donations table
-    `ALTER TABLE donations ADD COLUMN country TEXT`,
-    
     `CREATE TABLE IF NOT EXISTS fb_conversion_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       donation_orderId TEXT,
@@ -259,22 +197,16 @@ async function initializeDatabase() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(donation_orderId) REFERENCES donations(orderId)
     )`,
-
-    // Add indexes for performance
     `CREATE INDEX IF NOT EXISTS idx_donations_fb_conversion_sent 
      ON donations(fb_conversion_sent)`,
-    
     `CREATE INDEX IF NOT EXISTS idx_fb_conversion_logs_status 
      ON fb_conversion_logs(status)`,
-    
-    // Triggers for updated_at
     `CREATE TRIGGER IF NOT EXISTS donations_updated_at 
      AFTER UPDATE ON donations
      BEGIN
        UPDATE donations SET updated_at = CURRENT_TIMESTAMP 
        WHERE orderId = NEW.orderId;
      END`,
-    
     `CREATE TRIGGER IF NOT EXISTS fb_conversion_logs_updated_at 
      AFTER UPDATE ON fb_conversion_logs
      BEGIN
@@ -287,11 +219,8 @@ async function initializeDatabase() {
     try {
       await dbRun(migration);
     } catch (err) {
-      // Ignore errors for ALTER TABLE if column already exists
-      if (!err.message.includes('duplicate column name')) {
-        console.error('Migration failed:', err);
-        throw err;
-      }
+      console.error('Migration failed:', err);
+      throw err;
     }
   }
 }
@@ -325,7 +254,7 @@ async function sendFacebookConversionEvent(donation, req = null) {
       );
     }
 
-    // Dynamically import fetch (if not available globally)
+    // Dynamically import fetch
     const { default: fetch } = await import('node-fetch');
 
     // Parse amount from Redsys data
@@ -339,27 +268,16 @@ async function sendFacebookConversionEvent(donation, req = null) {
       }
     }
 
-    // Get client info from either stored data or current request
+    // Get client info from stored data or current request
     const clientIp = donation.client_ip || 
-                    (req && (req.headers['x-forwarded-for'] || req.connection?.remoteAddress)) || '';
+      (req && (req.headers['x-forwarded-for'] || req.connection?.remoteAddress)) || '';
     const userAgent = donation.client_user_agent || 
-                     (req && req.headers['user-agent']) || '';
+      (req && req.headers['user-agent']) || '';
 
-    // Get country from database or fetch it
-    let country = donation.country;
-    if (!country && clientIp) {
-      country = await getCountryFromIP(clientIp);
-      // Store country in database
-      await dbRun(
-        'UPDATE donations SET country = ? WHERE orderId = ?',
-        [country, donation.orderId]
-      );
-    }
-
+    // Convert IP to country using our helper function
+    const country = await getCountryFromIP(clientIp);
     // Hash the country value using SHA256
-    const hashedCountry = crypto.createHash('sha256')
-                               .update(country || 'unknown')
-                               .digest('hex');
+    const hashedCountry = crypto.createHash('sha256').update(country).digest('hex');
 
     const eventData = {
       event_name: 'Purchase',
@@ -417,6 +335,36 @@ async function sendFacebookConversionEvent(donation, req = null) {
   }
 }
 
+// Exponential backoff retry for FB conversion
+async function attemptFacebookConversion(donation, req = null) {
+  const maxAttempts = 3;
+  let attempt = 0;
+  let lastError = null;
+
+  while (attempt < maxAttempts) {
+    try {
+      const result = await sendFacebookConversionEvent(donation, req);
+      if (result.success) {
+        console.log(`Successfully sent FB conversion for order ${donation.orderId} on attempt ${attempt + 1}`);
+        return { success: true, result, attempts: attempt + 1 };
+      }
+      lastError = new Error(result.error || 'Unknown error');
+    } catch (err) {
+      console.error(`FB conversion attempt ${attempt + 1} failed for order ${donation.orderId}:`, err);
+      lastError = err;
+    }
+
+    attempt++;
+    if (attempt < maxAttempts) {
+      const delay = Math.pow(2, attempt) * 1000;
+      console.log(`Waiting ${delay}ms before retry ${attempt + 1} for order ${donation.orderId}`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  return { success: false, error: lastError, attempts: attempt };
+}
+
 // ---------------------------
 // Facebook Data Collection Routes
 // ---------------------------
@@ -444,25 +392,16 @@ app.post('/api/store-fb-data', (req, res) => {
     req.session.fbc = fbc;
     req.session.fbclid = fbclid || null;
 
-    // Use sendBeacon for reliable data transmission
-    res.set('Cache-Control', 'no-store');
     return res.json({
       message: 'FB data stored in session',
       fbclid,
       fbp,
-      fbc,
-      beaconUrl: '/api/beacon-fb-data'
+      fbc
     });
   } catch (err) {
     console.error('Error storing FB data:', err);
     return res.status(500).json({ error: 'Failed to store FB data' });
   }
-});
-
-// Add beacon endpoint for reliable data transmission
-app.post('/api/beacon-fb-data', (req, res) => {
-  console.log('Received FB data via beacon:', req.body);
-  res.status(204).end();
 });
 
 app.get('/api/get-fb-data', (req, res) => {
@@ -502,8 +441,7 @@ app.post('/create-donation', async (req, res) => {
     const fbc = req.session?.fbc;
     
     // Get client info
-    const clientIp = req.headers['x-forwarded-for'] || 
-                    req.connection?.remoteAddress || '';
+    const clientIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '';
     const userAgent = req.headers['user-agent'] || '';
 
     await dbRun(
@@ -513,9 +451,6 @@ app.post('/create-donation', async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [orderId, amount, fbclid, fbp, fbc, clientIp, userAgent]
     );
-
-    // Add IP to processing queue for country lookup
-    ipProcessingQueue.push({ ip: clientIp, orderId });
 
     console.log(`Created donation with orderId: ${orderId} and amount: ${amount}`);
     return res.json({ ok: true, orderId });
@@ -641,7 +576,7 @@ app.post('/api/redsys-notification', async (req, res) => {
 
         // Attempt FB conversion
         console.log(`Attempting FB conversion for order ${orderId}`);
-        const conversionResult = await sendFacebookConversionEvent(donation, req);
+        const conversionResult = await attemptFacebookConversion(donation, req);
         const now = new Date().toISOString();
 
         if (conversionResult.success) {
@@ -707,12 +642,12 @@ setInterval(async () => {
 
   try {
     console.log('Running FB conversion retry worker...');
-    const logs = await dbAll(`
-      SELECT * FROM fb_conversion_logs 
+    const logs = await dbAll(
+      `SELECT * FROM fb_conversion_logs 
        WHERE status != 'sent' 
          AND attempts < 3 
-         AND (last_attempt IS NULL OR datetime(last_attempt) <= datetime('now', '-5 minutes'))
-    `);
+         AND (last_attempt IS NULL OR datetime(last_attempt) <= datetime('now', '-5 minutes'))`
+    );
 
     console.log(`Found ${logs.length} pending FB conversions to retry`);
 
@@ -729,7 +664,7 @@ setInterval(async () => {
         }
 
         console.log(`Retrying FB conversion for order ${donation.orderId}`);
-        const conversionResult = await sendFacebookConversionEvent(donation);
+        const conversionResult = await attemptFacebookConversion(donation);
         const now = new Date().toISOString();
 
         if (conversionResult.success) {
@@ -788,7 +723,7 @@ app.use((err, req, res, next) => {
 });
 
 // ---------------------------
-// Process Error Handlers & Graceful Shutdown
+// Process Error Handlers
 // ---------------------------
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
@@ -801,6 +736,7 @@ process.on('uncaughtException', (err) => {
   }, 1000);
 });
 
+// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('Received SIGTERM signal. Starting graceful shutdown...');
   db.close((err) => {
