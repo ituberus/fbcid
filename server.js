@@ -18,7 +18,6 @@ const crypto = require('crypto');
 require('dotenv').config();
 
 // Declare global fetch variable; it will be set via dynamic import below.
-// (Do not use require('node-fetch') as node-fetch v3 is an ES module)
 let fetch;
 
 // Redsys Easy library
@@ -60,9 +59,16 @@ const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
 // ----------------------------
 // EXPRESS APP SETUP
 // ----------------------------
-// Allow all origins – fully public CORS configuration
+// To allow credentials and open access to any origin, we reflect the incoming Origin header.
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    callback(null, origin);
+  },
+  credentials: true
+}));
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
