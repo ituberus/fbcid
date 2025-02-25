@@ -1,4 +1,3 @@
-
 (function() {
   // === CONFIGURATION ===
   // Your actual Facebook Pixel ID
@@ -32,6 +31,19 @@
   }
 
   /**
+   * Retrieves the value of a specific cookie.
+   * @param {string} name - The name of the cookie.
+   * @returns {string|null} - The value of the cookie or null if not found.
+   */
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    if (match) {
+      return decodeURIComponent(match[2]);
+    }
+    return null;
+  }
+
+  /**
    * Stores Facebook data in localStorage.
    * @param {Object} data - An object containing fbclid, fbp, and fbc.
    */
@@ -45,16 +57,13 @@
   }
 
   /**
-   * Retrieves the value of a specific cookie.
-   * @param {string} name - The name of the cookie.
-   * @returns {string|null} - The value of the cookie or null if not found.
+   * Generates a new _fbc value based on fbclid and current timestamp.
+   * @param {string} fbclid - The fbclid value from the URL.
+   * @returns {string} - The generated _fbc value.
    */
-  function getCookie(name) {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    if (match) {
-      return decodeURIComponent(match[2]);
-    }
-    return null;
+  function generateFbc(fbclid) {
+    const timestamp = Math.floor(Date.now() / 1000);
+    return `fb.1.${timestamp}.${fbclid}`;
   }
 
   // === 1) Capture fbclid from the URL, store in cookie and localStorage ===
@@ -91,60 +100,65 @@
   fbq('init', FACEBOOK_PIXEL_ID);
   console.log(`[Facebook Pixel] Initialized with ID: ${FACEBOOK_PIXEL_ID}`);
 
-  // === 3) Manually generate _fbc if fbclid is present and _fbc not in cookie ===
-  const existingFbc = getCookie('_fbc');
-  if (fbclid && !existingFbc) {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const newFbc = `fb.1.${timestamp}.${fbclid}`;
-    setCookie('_fbc', newFbc, 30);
-    console.log(`[_fbc] Generated and set _fbc: ${newFbc}`);
-  } else {
-    if (existingFbc) {
-      console.log(`[_fbc] Existing _fbc found: ${existingFbc}`);
-    } else {
-      console.log('[_fbc] No fbclid present; _fbc not generated.');
-    }
-  }
-
-  // === 4) Retrieve _fbp and _fbc from cookies and store in localStorage ===
-  // Ensure that the Pixel has had enough time to set _fbp and _fbc
-  // Using a promise to wait until Pixel initializes and sets cookies
-  function waitForPixel(callback) {
-    const maxAttempts = 10;
+  /**
+   * Ensures that Pixel has set the _fbp cookie.
+   * @param {function} callback - Function to call once _fbp is retrieved or timeout occurs.
+   */
+  function ensureFbp(callback) {
+    const maxAttempts = 20; // Total wait time: 20 * 100ms = 2000ms
     let attempts = 0;
     const interval = setInterval(() => {
       const fbp = getCookie('_fbp');
-      const fbc = getCookie('_fbc');
-      if (fbp || fbc || attempts >= maxAttempts) {
+      if (fbp || attempts >= maxAttempts) {
         clearInterval(interval);
-        callback(fbp, fbc);
+        callback(fbp);
       }
       attempts++;
     }, 100); // Check every 100ms
   }
 
-  waitForPixel((fbp, fbc) => {
-    if (fbp) {
-      window.localStorage.setItem('fbp', fbp);
-      console.log(`[fbp] Stored in localStorage: ${fbp}`);
-    } else {
-      console.warn('[fbp] _fbp not found.');
-    }
+  /**
+   * Ensures that _fbp and _fbc are present, generating _fbc if necessary.
+   * Stores all values in localStorage.
+   */
+  function processFacebookData() {
+    ensureFbp((fbp) => {
+      if (fbp) {
+        window.localStorage.setItem('fbp', fbp);
+        console.log(`[fbp] Stored in localStorage: ${fbp}`);
+      } else {
+        console.warn('[fbp] _fbp not found.');
+      }
 
-    if (fbc) {
-      window.localStorage.setItem('fbc', fbc);
-      console.log(`[fbc] Stored in localStorage: ${fbc}`);
-    } else {
-      console.warn('[fbc] _fbc not found.');
-    }
+      let fbc = getCookie('_fbc');
+      if (fbclid && !fbc) {
+        fbc = generateFbc(fbclid);
+        setCookie('_fbc', fbc, 30);
+        console.log(`[_fbc] Generated and set _fbc: ${fbc}`);
+      } else if (fbc) {
+        console.log(`[_fbc] Existing _fbc found: ${fbc}`);
+      } else {
+        console.log('[_fbc] No fbclid present; _fbc not generated.');
+      }
 
-    // Final log of all Facebook data stored
-    const storedData = {
-      fbclid: window.localStorage.getItem('fbclid') || null,
-      fbp: window.localStorage.getItem('fbp') || null,
-      fbc: window.localStorage.getItem('fbc') || null
-    };
-    console.log('[Facebook Data] Final stored data in localStorage:', storedData);
-  });
+      if (fbc) {
+        window.localStorage.setItem('fbc', fbc);
+        console.log(`[fbc] Stored in localStorage: ${fbc}`);
+      } else {
+        console.warn('[fbc] _fbc not found or not generated.');
+      }
+
+      // Final log of all Facebook data stored
+      const storedData = {
+        fbclid: window.localStorage.getItem('fbclid') || null,
+        fbp: window.localStorage.getItem('fbp') || null,
+        fbc: window.localStorage.getItem('fbc') || null
+      };
+      console.log('[Facebook Data] Final stored data in localStorage:', storedData);
+    });
+  }
+
+  // === 3) Process Facebook Data after Pixel initialization ===
+  processFacebookData();
 
 })();
