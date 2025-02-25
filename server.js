@@ -51,35 +51,40 @@ const app = express();
 // MIDDLEWARE SETUP
 // ===================
 
-// Custom CORS middleware: reflect the request's Origin header when available,
-// which is required when credentials are included.
+// Custom CORS middleware with credentials support
 app.use(cors({
   credentials: true,
   origin: function (origin, callback) {
-    // If an Origin header is present, echo it back. Otherwise, deny CORS.
-    if (origin) {
-      callback(null, origin);
-    } else {
-      callback(null, false);
-    }
+    callback(null, origin || true); // Allow all origins with credentials
   }
 }));
 
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieParser(SESSION_SECRET)); // Use same secret as session
+
+// Configure session middleware
 app.use(session({
   secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true, // Changed to true to ensure session is always created
+  resave: true, // Changed to true to ensure session is saved
+  saveUninitialized: true,
+  name: 'sessionId', // Explicit session name
   cookie: {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'strict',
+    sameSite: 'lax', // Changed to lax to ensure cookies are sent in more scenarios
   },
+  rolling: true // Extend session expiry on each request
 }));
+
+// Add session debugging middleware
+app.use((req, res, next) => {
+  console.log('Session ID:', req.sessionID);
+  console.log('Session Data:', req.session);
+  next();
+});
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -108,8 +113,19 @@ const dbRun = (...args) => {
   });
 };
 
-// Create necessary tables
+// Initialize database tables
 db.serialize(() => {
+  // Add temporary_tracking table for storing FB data before order creation
+  db.run(`
+    CREATE TABLE IF NOT EXISTS temporary_tracking (
+      session_id TEXT PRIMARY KEY,
+      fbclid TEXT,
+      fbp TEXT,
+      fbc TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // donations table with tracking data
   db.run(`
     CREATE TABLE IF NOT EXISTS donations (
@@ -122,11 +138,12 @@ db.serialize(() => {
       client_user_agent TEXT,
       payment_status TEXT DEFAULT 'pending',
       fb_conversion_sent INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      session_id TEXT
     )
   `);
 
-  // fb_conversion_logs table for tracking conversion attempts
+  // fb_conversion_logs table
   db.run(`
     CREATE TABLE IF NOT EXISTS fb_conversion_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -146,6 +163,31 @@ db.serialize(() => {
 // HELPER FUNCTIONS
 // ===================
 
+// Store Facebook tracking data in both session and temporary database
+async function storeFacebookTrackingData(sessionId, data) {
+  const { fbclid, fbp, fbc } = data;
+  
+  // Store in database
+  await dbRun(`
+    INSERT OR REPLACE INTO temporary_tracking 
+    (session_id, fbclid, fbp, fbc) 
+    VALUES (?, ?, ?, ?)
+  `, [sessionId, fbclid, fbp, fbc]);
+  
+  return { fbclid, fbp, fbc };
+}
+
+// Get Facebook tracking data from both session and temporary database
+async function getFacebookTrackingData(sessionId) {
+  // Try to get from database first
+  const dbData = await dbGet(
+    'SELECT fbclid, fbp, fbc FROM temporary_tracking WHERE session_id = ?',
+    [sessionId]
+  );
+  
+  return dbData || { fbclid: null, fbp: null, fbc: null };
+}
+
 // Send event to Facebook Conversions API
 async function sendFacebookConversionEvent(donationData, paymentData) {
   console.log('Preparing to send Facebook conversion event:', {
@@ -154,11 +196,7 @@ async function sendFacebookConversionEvent(donationData, paymentData) {
   });
 
   const fetch = (await import('node-fetch')).default;
-
-  // Generate event ID using order ID
   const eventId = `redsys_${donationData.order_id}`;
-
-  // Convert amount from cents to whole units
   const amount = parseInt(paymentData.Ds_Amount) / 100;
 
   const eventData = {
@@ -174,20 +212,15 @@ async function sendFacebookConversionEvent(donationData, paymentData) {
     },
     custom_data: {
       value: amount,
-      currency: 'EUR', // Redsys uses EUR (978)
+      currency: 'EUR',
+      fbclid: donationData.fbclid || null
     }
   };
-
-  // Add fbclid if available
-  if (donationData.fbclid) {
-    eventData.custom_data.fbclid = donationData.fbclid;
-  }
 
   const payload = {
     data: [eventData]
   };
 
-  // Add test event code if available
   if (FACEBOOK_TEST_EVENT_CODE) {
     payload.test_event_code = FACEBOOK_TEST_EVENT_CODE;
   }
@@ -239,7 +272,6 @@ async function attemptFacebookConversion(donationData, paymentData) {
     attempt++;
     if (attempt < maxAttempts) {
       const delay = Math.pow(2, attempt) * 1000;
-      console.log(`Waiting ${delay}ms before next attempt...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -252,34 +284,39 @@ async function attemptFacebookConversion(donationData, paymentData) {
 // ===================
 
 // Store Facebook tracking data
-app.post('/api/store-fb-data', (req, res) => {
-  const { fbclid, fbp, fbc } = req.body;
-  console.log('Received FB data:', { fbclid, fbp, fbc });
+app.post('/api/store-fb-data', async (req, res) => {
+  try {
+    const { fbclid, fbp, fbc } = req.body;
+    console.log('Received FB data:', { fbclid, fbp, fbc });
 
-  if (!req.session) {
-    return res.status(500).json({ error: 'Session not available.' });
+    if (!req.sessionID) {
+      return res.status(500).json({ error: 'Session not available.' });
+    }
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    const generatedFbp = fbp || `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}`;
+    const generatedFbc = (!fbc && fbclid) ? `fb.1.${timestamp}.${fbclid}` : fbc;
+
+    // Store in both session and database
+    const trackingData = await storeFacebookTrackingData(req.sessionID, {
+      fbp: generatedFbp,
+      fbc: generatedFbc,
+      fbclid: fbclid || null
+    });
+
+    // Store in session as backup
+    req.session.fbTrackingData = trackingData;
+
+    console.log('Stored FB data:', trackingData);
+
+    return res.json({
+      message: 'FB data stored successfully',
+      ...trackingData
+    });
+  } catch (err) {
+    console.error('Error storing FB data:', err);
+    return res.status(500).json({ error: 'Failed to store FB data' });
   }
-
-  // Generate if missing
-  const timestamp = Math.floor(Date.now() / 1000);
-  const generatedFbp = !fbp ? `fb.1.${timestamp}.${Math.floor(Math.random() * 1e16)}` : fbp;
-  const generatedFbc = !fbc && fbclid ? `fb.1.${timestamp}.${fbclid}` : fbc;
-
-  // Store in session
-  req.session.fbTrackingData = {
-    fbp: generatedFbp,
-    fbc: generatedFbc,
-    fbclid: fbclid || null
-  };
-
-  console.log('Stored FB data in session:', req.session.fbTrackingData);
-
-  return res.json({
-    message: 'FB data stored in session',
-    fbp: generatedFbp,
-    fbc: generatedFbc,
-    fbclid
-  });
 });
 
 // Create donation and store tracking data
@@ -294,38 +331,35 @@ app.post('/create-donation', async (req, res) => {
     const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     const clientUserAgent = req.headers['user-agent'];
 
-    // Get tracking data from session
-    const fbTrackingData = req.session?.fbTrackingData || {};
-    const { fbclid, fbp, fbc } = fbTrackingData;
+    // Get tracking data from both session and database
+    const trackingData = await getFacebookTrackingData(req.sessionID);
+    console.log('Retrieved tracking data for donation:', trackingData);
 
     console.log('Creating donation with data:', {
       orderId,
       amount,
-      fbclid,
-      fbp,
-      fbc,
+      ...trackingData,
       clientIp,
-      clientUserAgent
+      clientUserAgent,
+      sessionId: req.sessionID
     });
 
-    // Store donation data with tracking information
+    // Store donation with tracking data
     await dbRun(`
       INSERT INTO donations (
         order_id, amount, fbclid, fbp, fbc,
-        client_ip, client_user_agent
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        client_ip, client_user_agent, session_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       orderId,
       amount,
-      fbclid || null,
-      fbp || null,
-      fbc || null,
+      trackingData.fbclid,
+      trackingData.fbp,
+      trackingData.fbc,
       clientIp,
-      clientUserAgent
+      clientUserAgent,
+      req.sessionID
     ]);
-
-    // Store order ID in session for later use
-    req.session.currentOrderId = orderId;
 
     return res.json({ ok: true, orderId });
   } catch (err) {
@@ -344,13 +378,11 @@ app.get('/iframe-sis', async (req, res) => {
 
     console.log('Processing iframe-sis request for order:', orderId);
 
-    // Get donation data
     const donation = await dbGet('SELECT * FROM donations WHERE order_id = ?', [orderId]);
     if (!donation) {
       return res.status(404).send('<h1>Error: no matching donor data</h1>');
     }
 
-    // Convert amount to cents for Redsys
     const dsAmount = Math.round(parseFloat(donation.amount)).toString();
     
     const params = {
@@ -358,7 +390,7 @@ app.get('/iframe-sis', async (req, res) => {
       DS_MERCHANT_TERMINAL: TERMINAL,
       DS_MERCHANT_ORDER: orderId,
       DS_MERCHANT_AMOUNT: dsAmount,
-      DS_MERCHANT_CURRENCY: '978', // EUR
+      DS_MERCHANT_CURRENCY: '978',
       DS_MERCHANT_TRANSACTIONTYPE: '0',
       DS_MERCHANT_CONSUMERLANGUAGE: '2',
       DS_MERCHANT_MERCHANTURL: MERCHANT_MERCHANTURL,
@@ -396,7 +428,7 @@ app.get('/iframe-sis', async (req, res) => {
 // Redsys payment notification endpoint
 app.post('/redsys-notification', async (req, res) => {
   try {
-    console.log('Received Redsys notification');
+        console.log('Received Redsys notification');
     const result = processRedirectNotification(req.body);
     console.log('Processed Redsys notification:', result);
 
@@ -414,7 +446,7 @@ app.post('/redsys-notification', async (req, res) => {
     if (responseCode < 100) {
       console.log('Payment successful for order:', orderId);
 
-      // Get donation data
+      // Get donation data with tracking information
       const donation = await dbGet('SELECT * FROM donations WHERE order_id = ?', [orderId]);
       if (!donation) {
         console.error('No donation found for order:', orderId);
@@ -429,7 +461,7 @@ app.post('/redsys-notification', async (req, res) => {
 
           // Log conversion attempt
           await dbRun(`
-                        INSERT INTO fb_conversion_logs (
+            INSERT INTO fb_conversion_logs (
               order_id, raw_payload, attempts, status, last_attempt
             ) VALUES (?, ?, ?, ?, datetime('now'))
           `, [
@@ -466,18 +498,14 @@ app.post('/redsys-notification', async (req, res) => {
 });
 
 // Get Facebook tracking data
-app.get('/api/get-fb-data', (req, res) => {
+app.get('/api/get-fb-data', async (req, res) => {
   try {
-    console.log('Retrieving FB data from session');
-    if (!req.session) {
-      return res.status(500).json({ error: 'Session not available.' });
-    }
-    const fbTrackingData = req.session.fbTrackingData || {};
-    return res.json({
-      fbp: fbTrackingData.fbp || null,
-      fbc: fbTrackingData.fbc || null,
-      fbclid: fbTrackingData.fbclid || null
-    });
+    console.log('Retrieving FB data for session:', req.sessionID);
+    
+    // Get tracking data from both session and database
+    const trackingData = await getFacebookTrackingData(req.sessionID);
+    
+    return res.json(trackingData);
   } catch (err) {
     console.error('Error retrieving FB data:', err);
     return res.status(500).json({ error: 'Failed to retrieve FB data' });
@@ -485,27 +513,42 @@ app.get('/api/get-fb-data', (req, res) => {
 });
 
 // Beacon endpoint for FB data (fallback)
-app.post('/api/beacon-fb-data', (req, res) => {
-  console.log('Received beacon FB data');
-  const { fbclid, fbp, fbc } = req.body;
-  
-  if (!req.session) {
-    console.error('No session available for beacon data');
-    return res.status(204).send();
+app.post('/api/beacon-fb-data', async (req, res) => {
+  try {
+    console.log('Received beacon FB data');
+    const { fbclid, fbp, fbc } = req.body;
+    
+    if (!req.sessionID) {
+      console.error('No session available for beacon data');
+      return res.status(204).send();
+    }
+
+    // Store in both session and database
+    await storeFacebookTrackingData(req.sessionID, {
+      fbclid: fbclid || null,
+      fbp: fbp || null,
+      fbc: fbc || null
+    });
+
+    return res.sendStatus(200);
+  } catch (err) {
+    console.error('Error processing beacon data:', err);
+    return res.status(500).send();
   }
-
-  // Initialize fbTrackingData if it doesn't exist
-  if (!req.session.fbTrackingData) {
-    req.session.fbTrackingData = {};
-  }
-
-  // Update tracking data without overwriting existing values
-  if (fbp) req.session.fbTrackingData.fbp = fbp;
-  if (fbc) req.session.fbTrackingData.fbc = fbc;
-  if (fbclid) req.session.fbTrackingData.fbclid = fbclid;
-
-  return res.sendStatus(200);
 });
+
+// Cleanup old temporary tracking data (optional)
+setInterval(async () => {
+  try {
+    // Remove temporary tracking data older than 24 hours
+    await dbRun(`
+      DELETE FROM temporary_tracking 
+      WHERE created_at < datetime('now', '-1 day')
+    `);
+  } catch (err) {
+    console.error('Error cleaning up temporary tracking data:', err);
+  }
+}, 60 * 60 * 1000); // Run every hour
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
