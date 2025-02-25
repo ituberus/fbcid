@@ -1,4 +1,4 @@
-const express = require('express'); 
+const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const sqlite3 = require('sqlite3').verbose();
@@ -72,7 +72,7 @@ app.use(cookieParser());
 app.use(session({
   secret: SESSION_SECRET,
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true, // Changed to true to ensure session is always created
   cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     secure: process.env.NODE_ENV === 'production',
@@ -266,15 +266,13 @@ app.post('/api/store-fb-data', (req, res) => {
   const generatedFbc = !fbc && fbclid ? `fb.1.${timestamp}.${fbclid}` : fbc;
 
   // Store in session
-  req.session.fbp = generatedFbp;
-  req.session.fbc = generatedFbc;
-  req.session.fbclid = fbclid || null;
-
-  console.log('Stored FB data in session:', {
+  req.session.fbTrackingData = {
     fbp: generatedFbp,
     fbc: generatedFbc,
-    fbclid
-  });
+    fbclid: fbclid || null
+  };
+
+  console.log('Stored FB data in session:', req.session.fbTrackingData);
 
   return res.json({
     message: 'FB data stored in session',
@@ -297,7 +295,8 @@ app.post('/create-donation', async (req, res) => {
     const clientUserAgent = req.headers['user-agent'];
 
     // Get tracking data from session
-    const { fbclid, fbp, fbc } = req.session || {};
+    const fbTrackingData = req.session?.fbTrackingData || {};
+    const { fbclid, fbp, fbc } = fbTrackingData;
 
     console.log('Creating donation with data:', {
       orderId,
@@ -324,6 +323,9 @@ app.post('/create-donation', async (req, res) => {
       clientIp,
       clientUserAgent
     ]);
+
+    // Store order ID in session for later use
+    req.session.currentOrderId = orderId;
 
     return res.json({ ok: true, orderId });
   } catch (err) {
@@ -399,53 +401,61 @@ app.post('/redsys-notification', async (req, res) => {
     console.log('Processed Redsys notification:', result);
 
     const responseCode = parseInt(result.Ds_Response || '9999', 10);
+    const orderId = result.Ds_Order;
+
+    // Update payment status regardless of response
+    const status = responseCode < 100 ? 'completed' : 'failed';
+    await dbRun(
+      'UPDATE donations SET payment_status = ? WHERE order_id = ?',
+      [status, orderId]
+    );
+
+    // Only process successful payments (response code < 100)
     if (responseCode < 100) {
-      console.log('Payment successful for order:', result.Ds_Order);
+      console.log('Payment successful for order:', orderId);
 
       // Get donation data
-      const donation = await dbGet('SELECT * FROM donations WHERE order_id = ?', [result.Ds_Order]);
+      const donation = await dbGet('SELECT * FROM donations WHERE order_id = ?', [orderId]);
       if (!donation) {
-        console.error('No donation found for order:', result.Ds_Order);
+        console.error('No donation found for order:', orderId);
         return res.send('OK');
       }
 
-      // Update payment status
-      await dbRun(
-        'UPDATE donations SET payment_status = ? WHERE order_id = ?',
-        ['completed', result.Ds_Order]
-      );
+      // Only send Facebook conversion if it hasn't been sent yet
+      if (!donation.fb_conversion_sent) {
+        try {
+          console.log('Attempting to send Facebook conversion for order:', orderId);
+          const conversionResult = await attemptFacebookConversion(donation, result);
 
-      // Send Facebook conversion event
-      try {
-        console.log('Attempting to send Facebook conversion for order:', result.Ds_Order);
-        const conversionResult = await attemptFacebookConversion(donation, result);
+          // Log conversion attempt
+          await dbRun(`
+                        INSERT INTO fb_conversion_logs (
+              order_id, raw_payload, attempts, status, last_attempt
+            ) VALUES (?, ?, ?, ?, datetime('now'))
+          `, [
+            orderId,
+            JSON.stringify({ donation, result }),
+            conversionResult.attempts,
+            conversionResult.success ? 'sent' : 'failed'
+          ]);
 
-        // Log conversion attempt
-        await dbRun(`
-          INSERT INTO fb_conversion_logs (
-            order_id, raw_payload, attempts, status, last_attempt
-          ) VALUES (?, ?, ?, ?, datetime('now'))
-        `, [
-          result.Ds_Order,
-          JSON.stringify({ donation, result }),
-          conversionResult.attempts,
-          conversionResult.success ? 'sent' : 'failed'
-        ]);
-
-        if (conversionResult.success) {
-          await dbRun(
-            'UPDATE donations SET fb_conversion_sent = 1 WHERE order_id = ?',
-            [result.Ds_Order]
-          );
-          console.log('Facebook conversion sent successfully for order:', result.Ds_Order);
-        } else {
-          console.error('Failed to send Facebook conversion for order:', result.Ds_Order);
+          if (conversionResult.success) {
+            await dbRun(
+              'UPDATE donations SET fb_conversion_sent = 1 WHERE order_id = ?',
+              [orderId]
+            );
+            console.log('Facebook conversion sent successfully for order:', orderId);
+          } else {
+            console.error('Failed to send Facebook conversion for order:', orderId);
+          }
+        } catch (convError) {
+          console.error('Error sending Facebook conversion:', convError);
         }
-      } catch (convError) {
-        console.error('Error sending Facebook conversion:', convError);
+      } else {
+        console.log('Facebook conversion already sent for order:', orderId);
       }
     } else {
-      console.log('Payment failed for order:', result.Ds_Order);
+      console.log('Payment failed for order:', orderId, 'Response code:', responseCode);
     }
 
     return res.send('OK');
@@ -462,11 +472,11 @@ app.get('/api/get-fb-data', (req, res) => {
     if (!req.session) {
       return res.status(500).json({ error: 'Session not available.' });
     }
-    const { fbp, fbc, fbclid } = req.session;
+    const fbTrackingData = req.session.fbTrackingData || {};
     return res.json({
-      fbp: fbp || null,
-      fbc: fbc || null,
-      fbclid: fbclid || null
+      fbp: fbTrackingData.fbp || null,
+      fbc: fbTrackingData.fbc || null,
+      fbclid: fbTrackingData.fbclid || null
     });
   } catch (err) {
     console.error('Error retrieving FB data:', err);
@@ -477,7 +487,6 @@ app.get('/api/get-fb-data', (req, res) => {
 // Beacon endpoint for FB data (fallback)
 app.post('/api/beacon-fb-data', (req, res) => {
   console.log('Received beacon FB data');
-  // Process the same way as store-fb-data
   const { fbclid, fbp, fbc } = req.body;
   
   if (!req.session) {
@@ -485,9 +494,16 @@ app.post('/api/beacon-fb-data', (req, res) => {
     return res.status(204).send();
   }
 
-  req.session.fbp = fbp || req.session.fbp;
-  req.session.fbc = fbc || req.session.fbc;
-  req.session.fbclid = fbclid || req.session.fbclid;
+  // Initialize fbTrackingData if it doesn't exist
+  if (!req.session.fbTrackingData) {
+    req.session.fbTrackingData = {};
+  }
+
+  // Update tracking data without overwriting existing values
+  if (fbp) req.session.fbTrackingData.fbp = fbp;
+  if (fbc) req.session.fbTrackingData.fbc = fbc;
+  if (fbclid) req.session.fbTrackingData.fbclid = fbclid;
+
   return res.sendStatus(200);
 });
 
