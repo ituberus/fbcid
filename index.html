@@ -703,97 +703,128 @@
                 </script>
 
                 <!-- Script to handle the "Donate now" button logic -->
-                <script>
-                  document.addEventListener("DOMContentLoaded", function () {
-                    // Single global error display function
-                    function showGlobalError(message) {
-                      const globalErrorDiv = document.getElementById("donation-form-error");
-                      if (!globalErrorDiv) return;
-                      if (message) {
-                        globalErrorDiv.style.display = "inline-flex";
-                        globalErrorDiv.classList.add("active");
-                        globalErrorDiv.querySelector("span").textContent = message;
-                      } else {
-                        globalErrorDiv.style.display = "none";
-                        globalErrorDiv.classList.remove("active");
-                        globalErrorDiv.querySelector("span").textContent = "";
-                      }
-                    }
+                <!-- Place this script at the end of your donation page's body -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Function to show or hide a global error message
+  function showGlobalError(message) {
+    const globalErrorDiv = document.getElementById("donation-form-error");
+    if (!globalErrorDiv) return;
+    if (message) {
+      globalErrorDiv.style.display = "inline-flex";
+      globalErrorDiv.classList.add("active");
+      globalErrorDiv.querySelector("span").textContent = message;
+    } else {
+      globalErrorDiv.style.display = "none";
+      globalErrorDiv.classList.remove("active");
+      globalErrorDiv.querySelector("span").textContent = "";
+    }
+  }
 
-                    // Only validate that one of the donation buttons is selected.
-                    function validateDonationAmount() {
-                      const pressedBtn = document.querySelector(
-                        'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
-                      );
-                      if (!pressedBtn) {
-                        showGlobalError("Please select a donation amount.");
-                        return false;
-                      }
-                      return true;
-                    }
+  // Validate that a donation amount is selected
+  function validateDonationAmount() {
+    const pressedBtn = document.querySelector(
+      'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
+    );
+    if (!pressedBtn) {
+      showGlobalError("Please select a donation amount.");
+      return false;
+    }
+    return true;
+  }
 
-                    const donateNowBtn = document.getElementById("donate-now");
-                    donateNowBtn.addEventListener("click", async function () {
-                      // Clear any previous error
-                      showGlobalError("");
+  const donateNowBtn = document.getElementById("donate-now");
+  donateNowBtn.addEventListener("click", async function () {
+    showGlobalError(""); // Clear previous errors
 
-                      // 1) Validate that an amount is selected
-                      if (!validateDonationAmount()) {
-                        // If no amount, show error and stop
-                        return;
-                      }
+    if (!validateDonationAmount()) {
+      return;
+    }
 
-                      // 2) If an amount is selected, proceed
-                      const pressedBtn = document.querySelector(
-                        'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
-                      );
-                      const selectedAmount = pressedBtn.value;
-                      const baseUrl = window.BACKEND_URL || "";
+    const pressedBtn = document.querySelector(
+      'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
+    );
+    const selectedAmount = pressedBtn.value;
+    const baseUrl = window.BACKEND_URL || "";
 
-                    // Get Facebook data from localStorage
-const fbclid = window.localStorage.getItem('fbclid');
-const fbp = window.localStorage.getItem('fbp');
-const fbc = window.localStorage.getItem('fbc');
+    const fbclid = window.localStorage.getItem("fbclid");
+    const fbp = window.localStorage.getItem("fbp");
+    const fbc = window.localStorage.getItem("fbc");
 
-// Prepare the donation data with the amount and Facebook parameters
-const dataToStore = {
-  amount: selectedAmount,
-  fbclid: fbclid,
-  fbp: fbp,
-  fbc: fbc
-};
+    const dataToStore = {
+      amount: selectedAmount,
+      fbclid: fbclid,
+      fbp: fbp,
+      fbc: fbc
+    };
 
+    try {
+      const resp = await fetch(baseUrl + "/create-donation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToStore)
+      });
 
-                      try {
-                        // POST to create-donation
-                        const resp = await fetch(baseUrl + "/create-donation", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          // No credentials needed if you're not using cookies
-                          body: JSON.stringify(dataToStore),
-                        });
+      if (!resp.ok) {
+        showGlobalError("Could not create donation, please try again.");
+        return;
+      }
 
-                        if (!resp.ok) {
-                          showGlobalError("Could not create donation, please try again.");
-                          return;
-                        }
+      const result = await resp.json();
+      if (!result.ok) {
+        showGlobalError("Error: " + result.error);
+        return;
+      }
 
-                        const result = await resp.json();
-                        if (!result.ok) {
-                          showGlobalError("Error: " + result.error);
-                          return;
-                        }
+      // Instead of redirecting, open a modal with an iframe loading the payment page.
+      const iframeSrc =
+        baseUrl + "/iframe-sis?orderId=" + encodeURIComponent(result.orderId);
+      const modalHtml = `
+        <div id="payment-modal" style="
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+          ">
+          <div style="
+              background: #fff;
+              padding: 20px;
+              border-radius: 5px;
+              position: relative;
+              max-width: 90%;
+              width: 500px;
+            ">
+            <button onclick="document.getElementById('payment-modal').remove()" style="
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: #f44336;
+                color: #fff;
+                border: none;
+                padding: 5px 10px;
+                cursor: pointer;
+                border-radius: 3px;
+              ">Cancel</button>
+            <h2>Please Wait...</h2>
+            <iframe src="${iframeSrc}" style="
+                width: 100%;
+                height: 400px;
+                border: none;
+              " sandbox="allow-forms allow-scripts allow-same-origin"></iframe>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML("beforeend", modalHtml);
+    } catch (error) {
+      showGlobalError("Error creating donation: " + error);
+    }
+  });
+});
+</script>
 
-                        // Success: redirect to the payment page
-                        window.location.href =
-                          baseUrl + "/iframe-sis?orderId=" + encodeURIComponent(result.orderId);
-
-                      } catch (error) {
-                        showGlobalError("Error creating donation: " + error);
-                      }
-                    });
-                  });
-                </script>
               </div>
             </div>
           </div>
