@@ -18,7 +18,7 @@ const { createRedsysAPI, SANDBOX_URLS, PRODUCTION_URLS, randomTransactionId } = 
 // HELPER FUNCTIONS FOR FACEBOOK DATA & COUNTRY DETECTION
 // ------------------------------------------------------
 
-// Extract fbclid from fbc even if version prefix is fb.1 or fb.2 (or later)
+// Extract fbclid from fbc even if version prefix is fb.1, fb.2, etc.
 // This function takes any fbc string and extracts everything after the third dot.
 function extractFbclidFromFbc(fbc) {
     try {
@@ -234,14 +234,14 @@ async function sendFacebookConversionEvent(donationRow) {
     }
 
     // -----------------------------
-    // Prepare the user_data object for FB event
+    // Prepare the user_data object for FB event.
+    // IMPORTANT: fbclid is NOT sent directly.
     // -----------------------------
     const userData = {};
     if (donationRow.fbp) userData.fbp = donationRow.fbp;
     if (donationRow.fbc) userData.fbc = donationRow.fbc;
     if (donationRow.client_ip_address) userData.client_ip_address = donationRow.client_ip_address;
     if (donationRow.client_user_agent) userData.client_user_agent = donationRow.client_user_agent;
-    if (donationRow.fbclid) userData.fbclid = donationRow.fbclid;
     if (country) userData.country = country; // Use the two-letter ISO country code
 
     console.log('[FB Conversion] User data prepared:', userData);
