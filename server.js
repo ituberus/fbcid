@@ -421,7 +421,7 @@ app.post('/create-donation', async (req, res) => {
     }
 });
 
-// Endpoint to initiate Redsys payment via an iframe redirect
+// Endpoint to initiate Redsys payment via an iframe modal popup
 app.get('/iframe-sis', async (req, res, next) => {
     try {
         const { orderId } = req.query;
@@ -459,20 +459,98 @@ app.get('/iframe-sis', async (req, res, next) => {
         const form = createRedirectForm(params);
         console.log('[Iframe Redirect] Redsys redirect form generated for order ID:', orderId);
 
+        // Generate HTML with a modal popup containing an iframe.
+        // A hidden form (targeting the iframe) auto-submits to load the payment page.
         const html = `
             <!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <title>Payment Redirect</title>
+                <title>Payment Modal</title>
+                <style>
+                    .modal-overlay {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: rgba(0,0,0,0.7);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 1000;
+                    }
+                    .modal-content {
+                        position: relative;
+                        width: 80%;
+                        max-width: 800px;
+                        background-color: white;
+                        border-radius: 8px;
+                        overflow: hidden;
+                    }
+                    .modal-cancel {
+                        position: absolute;
+                        top: 10px;
+                        right: 10px;
+                        background-color: #ff5c5c;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        padding: 5px 10px;
+                        cursor: pointer;
+                        z-index: 1001;
+                    }
+                    .loading-overlay {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(255,255,255,0.8);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 1002;
+                    }
+                    iframe {
+                        width: 100%;
+                        height: 500px;
+                        border: none;
+                    }
+                    .hidden-form {
+                        display: none;
+                    }
+                </style>
             </head>
-            <body onload="document.forms[0].submit()">
-                <h2>Please Wait...</h2>
-                <form action="${form.url}" method="POST">
+            <body>
+                <div class="modal-overlay" id="paymentModal">
+                    <div class="modal-content">
+                        <button class="modal-cancel" id="cancelButton">Cancel</button>
+                        <div class="loading-overlay" id="loadingOverlay">
+                            <div>Loading...</div>
+                        </div>
+                        <iframe name="paymentIframe" id="paymentIframe"></iframe>
+                    </div>
+                </div>
+                <form id="redirectForm" class="hidden-form" action="${form.url}" method="POST" target="paymentIframe">
                     <input type="hidden" name="Ds_SignatureVersion" value="${form.body.Ds_SignatureVersion}" />
                     <input type="hidden" name="Ds_MerchantParameters" value="${form.body.Ds_MerchantParameters}" />
                     <input type="hidden" name="Ds_Signature" value="${form.body.Ds_Signature}" />
                 </form>
+                <script>
+                    window.onload = function() {
+                        // Auto-submit the hidden form to load the payment page in the iframe
+                        document.getElementById('redirectForm').submit();
+                    };
+                    // Hide the loading overlay when the iframe has loaded
+                    document.getElementById('paymentIframe').onload = function() {
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                    };
+                    // Cancel button event handler – redirect to home (or another desired page)
+                    document.getElementById('cancelButton').addEventListener('click', function(){
+                        window.location.href = '/';
+                    });
+                </script>
             </body>
             </html>
         `;
