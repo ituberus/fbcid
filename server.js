@@ -466,14 +466,15 @@ app.get('/iframe-sis', async (req, res, next) => {
                 <meta charset="UTF-8">
                 <title>Payment Redirect</title>
                 <style>
-                    body {
-                        margin: 0;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh;
-                        background-color: #ffffff;
-                    }
+body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: transparent;
+}
+
                     .spinner {
                         border: 12px solid #f3f3f3;
                         border-top: 12px solid #4CAF50;
