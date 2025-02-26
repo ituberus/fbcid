@@ -246,7 +246,7 @@ async function sendFacebookConversionEvent(donationRow) {
 
     console.log('[FB Conversion] User data prepared:', userData);
 
-    const eventSourceUrl = 'https://yourdomain.com/orderComplete'; // Adjust if necessary
+    const eventSourceUrl = 'http://ituberus.github.io/fbcid/thanks.html'; // Adjust if necessary
     const finalEventId = donationRow.order_id || String(donationRow.id);
 
     // -----------------------------
