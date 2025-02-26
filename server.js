@@ -242,7 +242,7 @@ async function sendFacebookConversionEvent(donationRow) {
     if (donationRow.fbc) userData.fbc = donationRow.fbc;
     if (donationRow.client_ip_address) userData.client_ip_address = donationRow.client_ip_address;
     if (donationRow.client_user_agent) userData.client_user_agent = donationRow.client_user_agent;
-    if (country) userData.country = country; // Use the two-letter ISO country code
+    if (country) userData.country = crypto.createHash('sha256').update(country.toLowerCase()).digest('hex'); // Use the two-letter ISO country code
 
     console.log('[FB Conversion] User data prepared:', userData);
 
