@@ -15,6 +15,60 @@ const crypto = require('crypto');
 const { createRedsysAPI, SANDBOX_URLS, PRODUCTION_URLS, randomTransactionId } = require('redsys-easy');
 
 // ------------------------------------------------------
+// HELPER FUNCTIONS FOR FACEBOOK DATA & COUNTRY DETECTION
+// ------------------------------------------------------
+
+// Extract fbclid from fbc even if version prefix is fb.1 or fb.2 (or later)
+// This function takes any fbc string and extracts everything after the third dot.
+function extractFbclidFromFbc(fbc) {
+    try {
+        const parts = fbc.split('.');
+        if (parts.length >= 4) {
+            const fbclidExtracted = parts.slice(3).join('.');
+            // Optional: Validate that the fbclid is alphanumeric (with possible underscores or hyphens)
+            if (/^[A-Za-z0-9_-]+$/.test(fbclidExtracted)) {
+                return fbclidExtracted;
+            }
+            return fbclidExtracted;
+        }
+    } catch (err) {
+        console.error('[FB Data] Error extracting fbclid from fbc:', err);
+    }
+    return null;
+}
+
+// Generate fbc from fbclid using current timestamp (always in the format fb.1.<timestamp>.<fbclid>)
+function generateFbc(fbclid) {
+    const timestamp = Math.floor(Date.now() / 1000);
+    return `fb.1.${timestamp}.${fbclid}`;
+}
+
+// Generate a new fbp value if missing
+function generateFbp() {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const randomComponent = Math.floor(Math.random() * 1e15); // Large random number
+    return `fb.1.${timestamp}.${randomComponent}`;
+}
+
+// Retrieve the two-letter country code (ISO 3166-1 alpha-2) using a public API (ip-api.com)
+async function getCountryFromIP(ip) {
+    try {
+        const fetch = (await import('node-fetch')).default;
+        const response = await fetch(`http://ip-api.com/json/${ip}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.status === "success" && data.countryCode) {
+            return data.countryCode; // Returns the two-letter country code, e.g., "US"
+        }
+    } catch (err) {
+        console.error('[FB Data] Error fetching country from IP:', err);
+    }
+    return null;
+}
+
+// ------------------------------------------------------
 // ENVIRONMENT VARIABLES
 // ------------------------------------------------------
 const FACEBOOK_PIXEL_ID = process.env.FACEBOOK_PIXEL_ID || '';
@@ -151,29 +205,53 @@ const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
 });
 
 // ------------------------------------------------------
-// HELPER: Send to FB Conversions API
+// HELPER: Send to FB Conversions API (Updated with new logic)
 // ------------------------------------------------------
 async function sendFacebookConversionEvent(donationRow) {
+    // Import node-fetch for HTTP requests
     const fetch = (await import('node-fetch')).default;
 
-    function sha256(value) {
-        return crypto
-            .createHash('sha256')
-            .update(value.trim().toLowerCase())
-            .digest('hex');
+    // -----------------------------
+    // Update donationRow with missing values:
+    // -----------------------------
+    if (!donationRow.fbclid && donationRow.fbc) {
+        donationRow.fbclid = extractFbclidFromFbc(donationRow.fbc);
+        console.log('[FB Conversion] Extracted fbclid from fbc:', donationRow.fbclid);
+    }
+    if (!donationRow.fbc && donationRow.fbclid) {
+        donationRow.fbc = generateFbc(donationRow.fbclid);
+        console.log('[FB Conversion] Generated fbc from fbclid:', donationRow.fbc);
+    }
+    if (!donationRow.fbp) {
+        donationRow.fbp = generateFbp();
+        console.log('[FB Conversion] Generated new fbp:', donationRow.fbp);
+    }
+    // Get country code from IP address (if available)
+    let country = null;
+    if (donationRow.client_ip_address) {
+        country = await getCountryFromIP(donationRow.client_ip_address);
+        console.log('[FB Conversion] Country code from IP:', country);
     }
 
+    // -----------------------------
+    // Prepare the user_data object for FB event
+    // -----------------------------
     const userData = {};
     if (donationRow.fbp) userData.fbp = donationRow.fbp;
     if (donationRow.fbc) userData.fbc = donationRow.fbc;
     if (donationRow.client_ip_address) userData.client_ip_address = donationRow.client_ip_address;
     if (donationRow.client_user_agent) userData.client_user_agent = donationRow.client_user_agent;
+    if (donationRow.fbclid) userData.fbclid = donationRow.fbclid;
+    if (country) userData.country = country; // Use the two-letter ISO country code
 
     console.log('[FB Conversion] User data prepared:', userData);
 
     const eventSourceUrl = 'https://yourdomain.com/orderComplete'; // Adjust if necessary
     const finalEventId = donationRow.order_id || String(donationRow.id);
 
+    // -----------------------------
+    // Prepare event data as required by Facebook Conversions API
+    // -----------------------------
     const eventData = {
         event_name: 'Purchase',
         event_time: Math.floor(Date.now() / 1000),
@@ -183,13 +261,9 @@ async function sendFacebookConversionEvent(donationRow) {
         user_data: userData,
         custom_data: {
             value: donationRow.donation_amount ? donationRow.donation_amount / 100 : 0,
-            currency: 'EUR',
+            currency: 'EUR'
         },
     };
-
-    if (donationRow.fbclid) {
-        eventData.custom_data.fbclid = donationRow.fbclid;
-    }
 
     const payload = {
         data: [eventData],
@@ -201,6 +275,9 @@ async function sendFacebookConversionEvent(donationRow) {
 
     const url = `https://graph.facebook.com/v15.0/${FACEBOOK_PIXEL_ID}/events?access_token=${FACEBOOK_ACCESS_TOKEN}`;
 
+    // -----------------------------
+    // Send the event to Facebook
+    // -----------------------------
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -480,7 +557,9 @@ app.post('/redsys-notification', async (req, res, next) => {
     }
 });
 
+// ------------------------------------------------------
 // BACKGROUND WORKER: Retry Pending FB Conversions
+// ------------------------------------------------------
 setInterval(async () => {
     try {
         console.log('[Background Worker] Checking for pending FB conversions...');
@@ -494,17 +573,17 @@ setInterval(async () => {
             if (result.success) {
                 console.log(`[Background Worker] FB conversion retried successfully for donation id ${donationRow.id}`);
                 await dbRun(
-                    "UPDATE fb_conversion_logs SET status = 'sent', attempts = ?, last_attempt = ? WHERE id = ?",
+                    `UPDATE fb_conversion_logs SET status = 'sent', attempts = ?, last_attempt = ? WHERE id = ?`,
                     [result.attempts, now, log.id]
                 );
                 await dbRun(
-                    "UPDATE donations SET fb_conversion_sent = 1 WHERE id = ?",
+                    `UPDATE donations SET fb_conversion_sent = 1 WHERE id = ?`,
                     [donationRow.id]
                 );
             } else {
                 console.warn(`[Background Worker] Retry pending for donation id ${donationRow.id}`);
                 await dbRun(
-                    "UPDATE fb_conversion_logs SET attempts = ?, last_attempt = ?, error = ? WHERE id = ?",
+                    `UPDATE fb_conversion_logs SET attempts = ?, last_attempt = ?, error = ? WHERE id = ?`,
                     [
                         result.attempts,
                         now,
@@ -519,13 +598,17 @@ setInterval(async () => {
     }
 }, 60000); // Run every minute
 
+// ------------------------------------------------------
 // ERROR HANDLING MIDDLEWARE
+// ------------------------------------------------------
 app.use((err, req, res, next) => {
     console.error('[Error Handling] Unhandled error in middleware:', err);
     res.status(500).json({ error: 'An internal server error occurred.' });
 });
 
+// ------------------------------------------------------
 // GLOBAL PROCESS ERROR HANDLERS
+// ------------------------------------------------------
 process.on('unhandledRejection', (reason, promise) => {
     console.error('[Global Error] Unhandled Rejection:', reason);
 });
@@ -534,7 +617,9 @@ process.on('uncaughtException', (err) => {
     console.error('[Global Error] Uncaught Exception:', err);
 });
 
+// ------------------------------------------------------
 // START THE SERVER
+// ------------------------------------------------------
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
