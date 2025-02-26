@@ -77,13 +77,13 @@ const FACEBOOK_TEST_EVENT_CODE = process.env.FACEBOOK_TEST_EVENT_CODE || '';
 
 const MERCHANT_CODE = process.env.MERCHANT_CODE || '367149531';
 const TERMINAL = process.env.TERMINAL || '1';
-const SECRET_KEY = process.env.SECRET_KEY || 'sq7HjrUOBfKmC576ILgskD5srU870gJ7';
+const SECRET_KEY = process.env.SECRET_KEY || 'xdfHKzvmKSvUxPz91snmmjx14FpSWsU7';
 
 const MERCHANT_MERCHANTURL = process.env.MERCHANT_MERCHANTURL || 'https://fbcid-production.up.railway.app/redsys-notification';
 const MERCHANT_URLOK = process.env.MERCHANT_URLOK || 'https://yourdomain.com/thanks.html';
 const MERCHANT_URLKO = process.env.MERCHANT_URLKO || 'https://yourdomain.com/error.html';
 
-const REDSYS_ENVIRONMENT = process.env.REDSYS_ENVIRONMENT || 'test'; // 'test' or 'production'
+const REDSYS_ENVIRONMENT = process.env.REDSYS_ENVIRONMENT || 'production';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -453,7 +453,8 @@ app.get('/iframe-sis', async (req, res, next) => {
             DS_MERCHANT_CONSUMERLANGUAGE: '2',
             DS_MERCHANT_MERCHANTURL: MERCHANT_MERCHANTURL,
             DS_MERCHANT_URLOK: MERCHANT_URLOK,
-            DS_MERCHANT_URLKO: MERCHANT_URLKO
+            DS_MERCHANT_URLKO: MERCHANT_URLKO,
+            Ds_Merchant_PersoCode: '1'
         };
 
         const form = createRedirectForm(params);
@@ -604,46 +605,11 @@ app.post('/redsys-notification', async (req, res, next) => {
 });
 
 // ------------------------------------------------------
-// BACKGROUND WORKER: Retry Pending FB Conversions
+// 404 Handler
 // ------------------------------------------------------
-setInterval(async () => {
-    try {
-        console.log('[Background Worker] Checking for pending FB conversions...');
-        const logs = await dbAll("SELECT * FROM fb_conversion_logs WHERE status != 'sent' AND attempts < 3");
-        for (const log of logs) {
-            const donationRow = await dbGet("SELECT * FROM donations WHERE id = ?", [log.donation_id]);
-            if (!donationRow) continue;
-            console.log(`[Background Worker] Retrying FB conversion for donation id ${donationRow.id}`);
-            console.log('[Background Worker] Donation data:', donationRow);
-            const result = await attemptFacebookConversion(donationRow);
-            const now = new Date().toISOString();
-            if (result.success) {
-                console.log(`[Background Worker] FB conversion retried successfully for donation id ${donationRow.id}`);
-                await dbRun(
-                    `UPDATE fb_conversion_logs SET status = 'sent', attempts = ?, last_attempt = ? WHERE id = ?`,
-                    [result.attempts, now, log.id]
-                );
-                await dbRun(
-                    `UPDATE donations SET fb_conversion_sent = 1 WHERE id = ?`,
-                    [donationRow.id]
-                );
-            } else {
-                console.warn(`[Background Worker] Retry pending for donation id ${donationRow.id}`);
-                await dbRun(
-                    `UPDATE fb_conversion_logs SET attempts = ?, last_attempt = ?, error = ? WHERE id = ?`,
-                    [
-                        result.attempts,
-                        now,
-                        result.error ? result.error.message : '',
-                        log.id
-                    ]
-                );
-            }
-        }
-    } catch (err) {
-        console.error("[Background Worker] Error processing pending FB conversions:", err);
-    }
-}, 60000); // Run every minute
+app.use((req, res, next) => {
+    res.status(404).json({ error: 'Not Found' });
+});
 
 // ------------------------------------------------------
 // ERROR HANDLING MIDDLEWARE
@@ -658,10 +624,12 @@ app.use((err, req, res, next) => {
 // ------------------------------------------------------
 process.on('unhandledRejection', (reason, promise) => {
     console.error('[Global Error] Unhandled Rejection:', reason);
+    // Optionally, you could log this error and continue without exiting
 });
 
 process.on('uncaughtException', (err) => {
     console.error('[Global Error] Uncaught Exception:', err);
+    // Prevent app from crashing; consider logging and recovery measures here
 });
 
 // ------------------------------------------------------
