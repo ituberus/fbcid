@@ -708,12 +708,10 @@
 <!-- Place this script at the end of your donation page's body -->
 <!-- Ensure your donation page includes a container for the payment content -->
 <!-- Include a container for error messages if not already present -->
-<div id="donation-form-error" style="display:none; color:red; margin:10px 0;"><span></span></div>
-
 <!-- Place this script at the end of your donation page's body -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  // Function to show or hide a global error message
+  // Function to show or hide global error messages
   function showGlobalError(message) {
     const globalErrorDiv = document.getElementById("donation-form-error");
     if (!globalErrorDiv) return;
@@ -781,7 +779,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // Build the modal overlay HTML
+      // Build modal HTML with an iframe to load the payment page.
       const orderId = result.orderId;
       const iframeSrc = baseUrl + "/iframe-sis?orderId=" + encodeURIComponent(orderId);
       const modalHtml = `
@@ -801,39 +799,78 @@ document.addEventListener("DOMContentLoaded", function () {
           <div style="
               width: 90%;
               max-width: 600px;
-              background: transparent;
-              border: none;
+              background: #fff;
+              border-radius: 5px;
               position: relative;
+              overflow: hidden;
           ">
-            <button onclick="document.getElementById('payment-modal').remove()" style="
+            <iframe id="paymentIframe" src="${iframeSrc}" style="
+                width: 100%;
+                border: none;
+                display: block;
+                /* Let the iframe adjust its height automatically */
+                height: auto;
+                max-height: 90vh;
+            " sandbox="allow-forms allow-scripts allow-same-origin"></iframe>
+            <button id="cancelBtn" style="
                 position: absolute;
                 top: 10px;
                 right: 10px;
-                background: #f44336;
-                color: #fff;
-                border: none;
-                padding: 5px 10px;
-                cursor: pointer;
-                border-radius: 3px;
-                z-index: 10000;
-            ">Cancel</button>
-            <iframe src="${iframeSrc}" style="
-                width: 100%;
-                height: 80vh;
-                border: none;
+                width: 30px;
+                height: 30px;
                 background: transparent;
-            " sandbox="allow-forms allow-scripts allow-same-origin"></iframe>
+                border: none;
+                cursor: pointer;
+                display: none;
+                padding: 0;
+            "></button>
           </div>
         </div>
       `;
-      // Insert the modal into the document so it overlays the current page
       document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+      // When the iframe finishes loading, show the cancel button.
+      const paymentIframe = document.getElementById("paymentIframe");
+      const cancelBtn = document.getElementById("cancelBtn");
+      paymentIframe.addEventListener("load", function() {
+        cancelBtn.style.display = "block";
+      });
+
+      // Insert CSS to create a cross icon for the cancel button.
+      const styleEl = document.createElement("style");
+      styleEl.textContent = `
+        #cancelBtn::before, #cancelBtn::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 20px;
+          height: 2px;
+          background: #f44336;
+          transform-origin: center;
+        }
+        #cancelBtn::before {
+          transform: translate(-50%, -50%) rotate(45deg);
+        }
+        #cancelBtn::after {
+          transform: translate(-50%, -50%) rotate(-45deg);
+        }
+      `;
+      document.head.appendChild(styleEl);
+
+      // When the cancel button is clicked, remove the modal.
+      cancelBtn.addEventListener("click", function() {
+        const modal = document.getElementById("payment-modal");
+        if(modal) modal.remove();
+      });
+
     } catch (error) {
       showGlobalError("Error creating donation: " + error);
     }
   });
 });
 </script>
+
 
 
               </div>
