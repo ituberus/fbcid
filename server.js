@@ -421,7 +421,7 @@ app.post('/create-donation', async (req, res) => {
     }
 });
 
-// Endpoint to initiate Redsys payment via an iframe redirect
+// Endpoint to initiate Redsys payment via an iframe modal (stays on same page)
 app.get('/iframe-sis', async (req, res, next) => {
     try {
         const { orderId } = req.query;
@@ -459,12 +459,13 @@ app.get('/iframe-sis', async (req, res, next) => {
         const form = createRedirectForm(params);
         console.log('[Iframe Redirect] Redsys redirect form generated for order ID:', orderId);
 
+        // Return HTML with a modal overlay that contains an iframe to load the payment page
         const html = `
             <!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <title>Payment Redirect</title>
+                <title>Payment Modal</title>
                 <style>
                   /* Modal overlay style */
                   .modal-overlay {
@@ -486,19 +487,50 @@ app.get('/iframe-sis', async (req, res, next) => {
                       border-radius: 5px;
                       text-align: center;
                       max-width: 90%;
+                      width: 500px;
                       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                      position: relative;
+                  }
+                  /* Cancel button style */
+                  .cancel-button {
+                      position: absolute;
+                      top: 10px;
+                      right: 10px;
+                      background: #f44336;
+                      color: #fff;
+                      border: none;
+                      padding: 5px 10px;
+                      cursor: pointer;
+                      border-radius: 3px;
+                  }
+                  /* iFrame style */
+                  .payment-iframe {
+                      width: 100%;
+                      height: 400px;
+                      border: none;
                   }
                 </style>
+                <script>
+                  function cancelPayment() {
+                      document.querySelector('.modal-overlay').style.display = 'none';
+                  }
+                  window.onload = function() {
+                      // Submit the form to load the payment page into the iframe
+                      document.forms['paymentForm'].submit();
+                  }
+                </script>
             </head>
-            <body onload="document.forms[0].submit()">
+            <body>
                 <div class="modal-overlay">
                   <div class="modal-content">
+                    <button class="cancel-button" onclick="cancelPayment()">Cancel</button>
                     <h2>Please Wait...</h2>
-                    <form action="${form.url}" method="POST">
+                    <form id="paymentForm" name="paymentForm" action="${form.url}" method="POST" target="paymentIframe">
                         <input type="hidden" name="Ds_SignatureVersion" value="${form.body.Ds_SignatureVersion}" />
                         <input type="hidden" name="Ds_MerchantParameters" value="${form.body.Ds_MerchantParameters}" />
                         <input type="hidden" name="Ds_Signature" value="${form.body.Ds_Signature}" />
                     </form>
+                    <iframe name="paymentIframe" class="payment-iframe"></iframe>
                   </div>
                 </div>
             </body>
