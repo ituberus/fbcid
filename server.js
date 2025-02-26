@@ -459,7 +459,8 @@ app.get('/iframe-sis', async (req, res, next) => {
         const form = createRedirectForm(params);
         console.log('[Iframe Redirect] Redsys redirect form generated for order ID:', orderId);
 
-        // Return HTML with a modal overlay that contains an iframe to load the payment page
+        // Return HTML with a modal overlay that contains an iframe to load the payment page.
+        // The iframe includes a sandbox attribute (without allow-top-navigation) to prevent redirection.
         const html = `
             <!DOCTYPE html>
             <html lang="en">
@@ -530,7 +531,7 @@ app.get('/iframe-sis', async (req, res, next) => {
                         <input type="hidden" name="Ds_MerchantParameters" value="${form.body.Ds_MerchantParameters}" />
                         <input type="hidden" name="Ds_Signature" value="${form.body.Ds_Signature}" />
                     </form>
-                    <iframe name="paymentIframe" class="payment-iframe"></iframe>
+                    <iframe name="paymentIframe" class="payment-iframe" sandbox="allow-forms allow-scripts allow-same-origin"></iframe>
                   </div>
                 </div>
             </body>
