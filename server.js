@@ -464,11 +464,35 @@ app.get('/iframe-sis', async (req, res, next) => {
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Payment Redirect</title>
+                <style>
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        background-color: #ffffff;
+                    }
+                    .spinner {
+                        border: 12px solid #e0e0e0;
+                        border-top: 12px solid #28a745;
+                        border-radius: 50%;
+                        width: 80px;
+                        height: 80px;
+                        animation: spin 1s linear infinite;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
             </head>
             <body onload="document.forms[0].submit()">
-                <h2>Please Wait...</h2>
-                <form action="${form.url}" method="POST">
+                <div class="spinner"></div>
+                <form action="${form.url}" method="POST" style="display: none;">
                     <input type="hidden" name="Ds_SignatureVersion" value="${form.body.Ds_SignatureVersion}" />
                     <input type="hidden" name="Ds_MerchantParameters" value="${form.body.Ds_MerchantParameters}" />
                     <input type="hidden" name="Ds_Signature" value="${form.body.Ds_Signature}" />
@@ -563,7 +587,7 @@ app.post('/redsys-notification', async (req, res, next) => {
             // Log failed payment
             await dbRun(
                 `INSERT INTO payment_failures (order_id, amount, error) VALUES (?, ?, ?)`,
-                [result.Ds_Order, result.Ds_Amount, `Response code: ${responseCode}`]
+                [result.Ds_Order, result.Ds_Amount, \`Response code: \${responseCode}\`]
             );
             return res.send('OK');
         }
