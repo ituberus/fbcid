@@ -714,6 +714,9 @@
 <div id="donation-form-error" style="display:none; color:red; margin:10px 0;"></div>
 
 <!-- Place this script at the end of your donation page's body -->
+<div id="donation-form-error" style="display:none; color:red; margin:10px 0;"></div>
+
+<!-- Place this script at the end of your donation page's body -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   // Add the CSS for the loading spinner animation
@@ -730,21 +733,24 @@ document.addEventListener("DOMContentLoaded", function () {
       border-radius: 50%;
       border-top-color: transparent;
       animation: spinner 0.8s linear infinite;
-      margin-right: 8px;
       vertical-align: middle;
     }
     .button-loading {
       cursor: wait;
     }
-    .button-loading span {
-      visibility: hidden;
-      opacity: 0;
-    }
     .button-content {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+    }
+    .button-loading-text {
+      margin-left: 8px;
+      color: #ffffff;
     }
   `;
   document.head.appendChild(styleSheet);
@@ -784,11 +790,14 @@ document.addEventListener("DOMContentLoaded", function () {
       donateBtn.setAttribute('data-original-content', donateBtn.innerHTML);
     }
     
+    // Add position relative to button if not already set
+    donateBtn.style.position = 'relative';
+    
     // Replace button content with spinner and text
     donateBtn.innerHTML = `
       <div class="button-content">
         <div class="loading-spinner"></div>
-        <span>Processing...</span>
+        <span class="button-loading-text">Processing...</span>
       </div>
     `;
   }
@@ -797,6 +806,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function stopLoading() {
     const donateBtn = document.getElementById("donate-now");
     donateBtn.classList.remove("button-loading");
+    donateBtn.style.position = '';
     
     // Restore original content
     const originalContent = donateBtn.getAttribute('data-original-content');
@@ -926,7 +936,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
-
 
 
 
