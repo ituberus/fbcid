@@ -714,12 +714,9 @@
 <div id="donation-form-error" style="display:none; color:red; margin:10px 0;"></div>
 
 <!-- Place this script at the end of your donation page's body -->
-<div id="donation-form-error" style="display:none; color:red; margin:10px 0;"></div>
-
-<!-- Place this script at the end of your donation page's body -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  // Add the CSS for the loading spinner animation
+  // Add the CSS for the loading spinner animation and scrollbar styling
   const styleSheet = document.createElement("style");
   styleSheet.textContent = `
     @keyframes spinner {
@@ -751,6 +748,27 @@ document.addEventListener("DOMContentLoaded", function () {
     .button-loading-text {
       margin-left: 8px;
       color: #ffffff;
+    }
+    /* Custom scrollbar styling */
+    .payment-modal-container {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .payment-modal-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    .payment-modal-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .payment-modal-container::-webkit-scrollbar-thumb {
+      background-color: rgba(155, 155, 155, 0.5);
+      border-radius: 4px;
+      border: 2px solid transparent;
+    }
+    .payment-modal-container::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(155, 155, 155, 0.7);
     }
   `;
   document.head.appendChild(styleSheet);
@@ -815,6 +833,23 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // Function to update iframe height based on visible content
+  function updateIframeHeight(iframe) {
+    try {
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      const visibleHeight = Math.max(
+        Array.from(iframeDoc.body.children).reduce((height, element) => {
+          const rect = element.getBoundingClientRect();
+          return Math.max(height, rect.bottom);
+        }, 0),
+        iframeDoc.documentElement.scrollHeight
+      );
+      iframe.style.height = visibleHeight + "px";
+    } catch (e) {
+      iframe.style.height = "600px"; // Fallback height
+    }
+  }
+
   const donateNowBtn = document.getElementById("donate-now");
   donateNowBtn.addEventListener("click", async function () {
     showGlobalError(""); // Clear previous errors
@@ -869,15 +904,14 @@ document.addEventListener("DOMContentLoaded", function () {
             top: 0;
             left: 0;
             width: 100%;
-            min-height: 100vh;
+            height: 100vh;
             background: rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            overflow: hidden;
         ">
-          <div style="
+          <div class="payment-modal-container" style="
               width: 90%;
               max-width: 600px;
               background: transparent;
@@ -901,8 +935,10 @@ document.addEventListener("DOMContentLoaded", function () {
             <iframe id="payment-iframe" src="${iframeSrc}" style="
                 width: 100%;
                 border: none;
-                overflow: hidden;
-            " scrolling="no" sandbox="allow-forms allow-scripts allow-same-origin"></iframe>
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            " scrolling="yes" sandbox="allow-forms allow-scripts allow-same-origin"></iframe>
           </div>
         </div>
       `;
@@ -910,19 +946,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const iframe = document.getElementById("payment-iframe");
       const cancelBtn = document.getElementById("cancel-btn");
+      
+      // Create a ResizeObserver to watch for iframe content changes
+      const resizeObserver = new ResizeObserver(() => {
+        updateIframeHeight(iframe);
+      });
+
       iframe.addEventListener("load", function () {
-        try {
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-          const contentHeight = iframeDoc.body.scrollHeight;
-          iframe.style.height = contentHeight + "px";
-        } catch (e) {
-          iframe.style.height = "600px"; // Fallback height
-        }
+        updateIframeHeight(iframe);
         cancelBtn.style.display = "block";
+        
+        try {
+          resizeObserver.observe(iframe.contentDocument.body);
+        } catch (e) {
+          console.warn('Could not attach resize observer to iframe body');
+        }
       });
       
       // Stop loading state when cancel button is clicked
       cancelBtn.addEventListener("click", function () {
+        resizeObserver.disconnect();
         const modal = document.getElementById("payment-modal");
         if (modal) {
           modal.remove();
@@ -936,7 +979,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
-
 
 
 
