@@ -81,8 +81,8 @@ const TERMINAL = process.env.TERMINAL || '1';
 const SECRET_KEY = process.env.SECRET_KEY || 'xdfHKzvmKSvUxPz91snmmjx14FpSWsU7';
 
 const MERCHANT_MERCHANTURL = process.env.MERCHANT_MERCHANTURL || 'https://fbcid-production.up.railway.app/redsys-notification';
-const MERCHANT_URLOK = process.env.MERCHANT_URLOK || 'https://yourdomain.com/thanks.html';
-const MERCHANT_URLKO = process.env.MERCHANT_URLKO || 'https://yourdomain.com/error.html';
+const MERCHANT_URLOK = process.env.MERCHANT_URLOK || '/thanks';
+const MERCHANT_URLKO = process.env.MERCHANT_URLKO || '/error';
 
 // Set environment to production by default
 const REDSYS_ENVIRONMENT = process.env.REDSYS_ENVIRONMENT || 'production';
@@ -244,7 +244,13 @@ async function sendFacebookConversionEvent(donationRow) {
         if (donationRow.fbc) userData.fbc = donationRow.fbc;
         if (donationRow.client_ip_address) userData.client_ip_address = donationRow.client_ip_address;
         if (donationRow.client_user_agent) userData.client_user_agent = donationRow.client_user_agent;
-        if (country) userData.country = crypto.createHash('sha256').update(country.toLowerCase()).digest('hex'); // Use the two-letter ISO country code
+        if (country) {
+            try {
+                userData.country = crypto.createHash('sha256').update(country.toLowerCase()).digest('hex');
+            } catch (err) {
+                console.error('[FB Data] Error hashing country:', err);
+            }
+        }
 
         console.log('[FB Conversion] User data prepared:', userData);
 
@@ -416,7 +422,13 @@ app.post('/create-donation', async (req, res) => {
             DS_MERCHANT_URLKO: MERCHANT_URLKO,
             Ds_Merchant_PersoCode: '1'
         };
-        const form = createRedirectForm(params);
+        let form;
+        try {
+            form = createRedirectForm(params);
+        } catch (err) {
+            console.error('[Create Donation] Error creating Redsys form:', err);
+            return res.status(500).json({ error: 'Error generating payment form.' });
+        }
         console.log('[Create Donation] Redsys form generated for order ID:', orderId);
 
         // Return the orderId along with the form data
@@ -461,11 +473,16 @@ app.get('/iframe-sis', async (req, res, next) => {
             DS_MERCHANT_URLOK: MERCHANT_URLOK,
             DS_MERCHANT_URLKO: MERCHANT_URLKO,
             Ds_Merchant_PersoCode: '1'
-            
-         
         };
 
-        const form = createRedirectForm(params);
+        let form;
+        try {
+            form = createRedirectForm(params);
+        } catch (err) {
+            console.error('[Iframe Redirect] Error creating redirect form:', err);
+            return res.status(500).send('<h1>Error: could not generate payment form</h1>');
+        }
+
         console.log('[Iframe Redirect] Redsys redirect form generated for order ID:', orderId);
 
         const html = `
@@ -484,25 +501,25 @@ body {
     background-color: transparent;
 }
 
-                    .spinner {
-                        border: 12px solid #f3f3f3;
-                        border-top: 12px solid #4CAF50;
-                        border-radius: 50%;
-                        width: 80px;
-                        height: 80px;
-                        animation: spin 2s linear infinite;
-                    }
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                    @media (min-width: 601px) {
-                        .spinner {
-                            width: 120px;
-                            height: 120px;
-                            border-width: 16px;
-                        }
-                    }
+.spinner {
+    border: 12px solid #f3f3f3;
+    border-top: 12px solid #4CAF50;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    animation: spin 2s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+@media (min-width: 601px) {
+    .spinner {
+        width: 120px;
+        height: 120px;
+        border-width: 16px;
+    }
+}
                 </style>
             </head>
             <body onload="document.forms[0].submit()">
@@ -526,7 +543,14 @@ body {
 app.post('/redsys-notification', async (req, res, next) => {
     try {
         console.log('[Redsys Notification] Received notification with body:', req.body);
-        const result = processRedirectNotification(req.body);
+        let result;
+        try {
+            result = processRedirectNotification(req.body);
+        } catch (err) {
+            console.error('[Redsys Notification] Error processing notification:', err);
+            // Even if there's an error, respond with 'OK' so Redsys doesn't keep retrying indefinitely
+            return res.send('OK');
+        }
         console.log('[Redsys Notification] Processed result:', result);
 
         const responseCode = parseInt(result.Ds_Response || '9999', 10);
@@ -610,6 +634,83 @@ app.post('/redsys-notification', async (req, res, next) => {
         console.error('[Redsys Notification] Error in /redsys-notification:', err);
         next(err);
     }
+});
+
+// ------------------------------------------------------
+// Custom THANKS and ERROR Routes
+// ------------------------------------------------------
+app.get('/thanks', (req, res) => {
+    // A simple "Thank you" page design
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Thank You</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    font-family: Arial, sans-serif;
+                    background: #f5f5f5;
+                }
+                .container {
+                    text-align: center;
+                    padding: 50px;
+                }
+                h1 {
+                    color: #4CAF50;
+                }
+                p {
+                    font-size: 1.2em;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Thank You!</h1>
+                <p>Your Payment Was Successful</p>
+            </div>
+        </body>
+        </html>
+    `;
+    res.send(html);
+});
+
+app.get('/error', (req, res) => {
+    // A simple "Error" page design
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Payment Error</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    font-family: Arial, sans-serif;
+                    background: #f5f5f5;
+                }
+                .container {
+                    text-align: center;
+                    padding: 50px;
+                }
+                h1 {
+                    color: #f44336;
+                }
+                p {
+                    font-size: 1.2em;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Oops! Something went wrong.</h1>
+                <p>It seems there was a problem with your payment. Please try again.</p>
+            </div>
+        </body>
+        </html>
+    `;
+    res.send(html);
 });
 
 // ------------------------------------------------------
