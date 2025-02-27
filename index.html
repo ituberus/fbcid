@@ -713,20 +713,22 @@
 <!-- Ensure you have an element for error messages (if needed) -->
 <div id="donation-form-error" style="display:none; color:red; margin:10px 0;"></div>
 
-<!-- Add the rolling animation CSS -->
-<style>
-  @keyframes rolling {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .rolling {
-    animation: rolling 1s linear infinite;
-  }
-</style>
-
 <!-- Place this script at the end of your donation page's body -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+  // Add the CSS for rolling animation directly in the script
+  const styleSheet = document.createElement("style");
+  styleSheet.textContent = `
+    @keyframes rolling {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .button-rolling {
+      animation: rolling 2s linear infinite;
+    }
+  `;
+  document.head.appendChild(styleSheet);
+
   // Show or hide a global error message
   function showGlobalError(message) {
     const globalErrorDiv = document.getElementById("donation-form-error");
@@ -752,11 +754,29 @@ document.addEventListener("DOMContentLoaded", function () {
     return true;
   }
 
+  // Function to start rolling animation
+  function startRolling() {
+    const donateBtn = document.getElementById("donate-now");
+    donateBtn.classList.add("button-rolling");
+  }
+
+  // Function to stop rolling animation
+  function stopRolling() {
+    const donateBtn = document.getElementById("donate-now");
+    donateBtn.classList.remove("button-rolling");
+  }
+
   const donateNowBtn = document.getElementById("donate-now");
   donateNowBtn.addEventListener("click", async function () {
     showGlobalError(""); // Clear previous errors
 
-    if (!validateDonationAmount()) return;
+    if (!validateDonationAmount()) {
+      stopRolling();
+      return;
+    }
+
+    // Start rolling animation as soon as valid amount is selected and button is clicked
+    startRolling();
 
     const pressedBtn = document.querySelector(
       'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
@@ -783,17 +803,18 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       if (!resp.ok) {
         showGlobalError("Could not create donation, please try again.");
+        stopRolling();
         return;
       }
       const result = await resp.json();
       if (!result.ok) {
         showGlobalError("Error: " + result.error);
+        stopRolling();
         return;
       }
       const orderId = result.orderId;
       const iframeSrc = baseUrl + "/iframe-sis?orderId=" + encodeURIComponent(orderId);
 
-      // Build the modal HTML.
       const modalHtml = `
         <div id="payment-modal" style="
             position: fixed;
@@ -839,17 +860,6 @@ document.addEventListener("DOMContentLoaded", function () {
       `;
       document.body.insertAdjacentHTML("beforeend", modalHtml);
 
-      // Add rolling animation to the donate now button.
-      donateNowBtn.classList.add("rolling");
-
-      // Function to close modal and stop animation
-      function closeModal() {
-        const modal = document.getElementById("payment-modal");
-        if (modal) modal.remove();
-        donateNowBtn.classList.remove("rolling");
-      }
-
-      // Adjust iframe height to content height (if same origin) and show cancel button after load.
       const iframe = document.getElementById("payment-iframe");
       const cancelBtn = document.getElementById("cancel-btn");
       iframe.addEventListener("load", function () {
@@ -863,12 +873,17 @@ document.addEventListener("DOMContentLoaded", function () {
         cancelBtn.style.display = "block";
       });
       
-      // Attach closeModal function to cancel button.
+      // Stop rolling animation when cancel button is clicked
       cancelBtn.addEventListener("click", function () {
-        closeModal();
+        const modal = document.getElementById("payment-modal");
+        if (modal) {
+          modal.remove();
+          stopRolling();
+        }
       });
     } catch (error) {
       showGlobalError("Error creating donation: " + error);
+      stopRolling();
     }
   });
 });
