@@ -413,8 +413,7 @@ app.post('/create-donation', async (req, res) => {
             DS_MERCHANT_CONSUMERLANGUAGE: '2',
             DS_MERCHANT_MERCHANTURL: MERCHANT_MERCHANTURL,
             DS_MERCHANT_URLOK: MERCHANT_URLOK,
-            DS_MERCHANT_URLKO: MERCHANT_URLKO,
-           Ds_Merchant_PersoCode: '1'
+            DS_MERCHANT_URLKO: MERCHANT_URLKO
             
         };
         const form = createRedirectForm(params);
@@ -460,8 +459,8 @@ app.get('/iframe-sis', async (req, res, next) => {
             DS_MERCHANT_CONSUMERLANGUAGE: '2',
             DS_MERCHANT_MERCHANTURL: MERCHANT_MERCHANTURL,
             DS_MERCHANT_URLOK: MERCHANT_URLOK,
-            DS_MERCHANT_URLKO: MERCHANT_URLKO,
-            Ds_Merchant_PersoCode: '1'
+            DS_MERCHANT_URLKO: MERCHANT_URLKO
+            
          
         };
 
