@@ -713,6 +713,17 @@
 <!-- Ensure you have an element for error messages (if needed) -->
 <div id="donation-form-error" style="display:none; color:red; margin:10px 0;"></div>
 
+<!-- Add the rolling animation CSS -->
+<style>
+  @keyframes rolling {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .rolling {
+    animation: rolling 1s linear infinite;
+  }
+</style>
+
 <!-- Place this script at the end of your donation page's body -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -783,9 +794,6 @@ document.addEventListener("DOMContentLoaded", function () {
       const iframeSrc = baseUrl + "/iframe-sis?orderId=" + encodeURIComponent(orderId);
 
       // Build the modal HTML.
-      // The overlay has a transparent dark background.
-      // The inner container is transparent, and the iframe's height is adjusted on load.
-      // The cancel button (an inline SVG icon) is hidden initially.
       const modalHtml = `
         <div id="payment-modal" style="
             position: fixed;
@@ -817,7 +825,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 display: none;
                 z-index: 10000;
             ">
-              <!-- Inline SVG icon for cancel -->
               <svg viewBox="0 0 24 24" width="24" height="24">
                 <path fill="#f44336" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
               </svg>
@@ -831,6 +838,16 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
       `;
       document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+      // Add rolling animation to the donate now button.
+      donateNowBtn.classList.add("rolling");
+
+      // Function to close modal and stop animation
+      function closeModal() {
+        const modal = document.getElementById("payment-modal");
+        if (modal) modal.remove();
+        donateNowBtn.classList.remove("rolling");
+      }
 
       // Adjust iframe height to content height (if same origin) and show cancel button after load.
       const iframe = document.getElementById("payment-iframe");
@@ -846,10 +863,9 @@ document.addEventListener("DOMContentLoaded", function () {
         cancelBtn.style.display = "block";
       });
       
-      // Optionally, allow the cancel button to remove the modal.
+      // Attach closeModal function to cancel button.
       cancelBtn.addEventListener("click", function () {
-        const modal = document.getElementById("payment-modal");
-        if (modal) modal.remove();
+        closeModal();
       });
     } catch (error) {
       showGlobalError("Error creating donation: " + error);
@@ -857,6 +873,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
+
 
 
 
