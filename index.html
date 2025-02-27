@@ -716,15 +716,35 @@
 <!-- Place this script at the end of your donation page's body -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  // Add the CSS for rolling animation directly in the script
+  // Add the CSS for the loading spinner animation
   const styleSheet = document.createElement("style");
   styleSheet.textContent = `
-    @keyframes rolling {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    @keyframes spinner {
+      to { transform: rotate(360deg); }
     }
-    .button-rolling {
-      animation: rolling 2s linear infinite;
+    .loading-spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spinner 0.8s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .button-loading {
+      cursor: wait;
+    }
+    .button-loading span {
+      visibility: hidden;
+      opacity: 0;
+    }
+    .button-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
   `;
   document.head.appendChild(styleSheet);
@@ -754,16 +774,35 @@ document.addEventListener("DOMContentLoaded", function () {
     return true;
   }
 
-  // Function to start rolling animation
-  function startRolling() {
+  // Function to start loading state
+  function startLoading() {
     const donateBtn = document.getElementById("donate-now");
-    donateBtn.classList.add("button-rolling");
+    donateBtn.classList.add("button-loading");
+    
+    // Save original button content if not already saved
+    if (!donateBtn.getAttribute('data-original-content')) {
+      donateBtn.setAttribute('data-original-content', donateBtn.innerHTML);
+    }
+    
+    // Replace button content with spinner and text
+    donateBtn.innerHTML = `
+      <div class="button-content">
+        <div class="loading-spinner"></div>
+        <span>Processing...</span>
+      </div>
+    `;
   }
 
-  // Function to stop rolling animation
-  function stopRolling() {
+  // Function to stop loading state
+  function stopLoading() {
     const donateBtn = document.getElementById("donate-now");
-    donateBtn.classList.remove("button-rolling");
+    donateBtn.classList.remove("button-loading");
+    
+    // Restore original content
+    const originalContent = donateBtn.getAttribute('data-original-content');
+    if (originalContent) {
+      donateBtn.innerHTML = originalContent;
+    }
   }
 
   const donateNowBtn = document.getElementById("donate-now");
@@ -771,12 +810,11 @@ document.addEventListener("DOMContentLoaded", function () {
     showGlobalError(""); // Clear previous errors
 
     if (!validateDonationAmount()) {
-      stopRolling();
       return;
     }
 
-    // Start rolling animation as soon as valid amount is selected and button is clicked
-    startRolling();
+    // Start loading state
+    startLoading();
 
     const pressedBtn = document.querySelector(
       'ul[data-federalid="suggested-donations-list"] button[aria-pressed="true"]'
@@ -803,13 +841,13 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       if (!resp.ok) {
         showGlobalError("Could not create donation, please try again.");
-        stopRolling();
+        stopLoading();
         return;
       }
       const result = await resp.json();
       if (!result.ok) {
         showGlobalError("Error: " + result.error);
-        stopRolling();
+        stopLoading();
         return;
       }
       const orderId = result.orderId;
@@ -873,17 +911,17 @@ document.addEventListener("DOMContentLoaded", function () {
         cancelBtn.style.display = "block";
       });
       
-      // Stop rolling animation when cancel button is clicked
+      // Stop loading state when cancel button is clicked
       cancelBtn.addEventListener("click", function () {
         const modal = document.getElementById("payment-modal");
         if (modal) {
           modal.remove();
-          stopRolling();
+          stopLoading();
         }
       });
     } catch (error) {
       showGlobalError("Error creating donation: " + error);
-      stopRolling();
+      stopLoading();
     }
   });
 });
