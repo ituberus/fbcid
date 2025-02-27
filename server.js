@@ -77,13 +77,15 @@ const FACEBOOK_TEST_EVENT_CODE = process.env.FACEBOOK_TEST_EVENT_CODE || '';
 
 const MERCHANT_CODE = process.env.MERCHANT_CODE || '367149531';
 const TERMINAL = process.env.TERMINAL || '1';
-const SECRET_KEY = process.env.SECRET_KEY || 'sq7HjrUOBfKmC576ILgskD5srU870gJ7';
+// Changed to production secret key
+const SECRET_KEY = process.env.SECRET_KEY || 'xdfHKzvmKSvUxPz91snmmjx14FpSWsU7';
 
 const MERCHANT_MERCHANTURL = process.env.MERCHANT_MERCHANTURL || 'https://fbcid-production.up.railway.app/redsys-notification';
 const MERCHANT_URLOK = process.env.MERCHANT_URLOK || 'https://yourdomain.com/thanks.html';
 const MERCHANT_URLKO = process.env.MERCHANT_URLKO || 'https://yourdomain.com/error.html';
 
-const REDSYS_ENVIRONMENT = process.env.REDSYS_ENVIRONMENT || 'test'; // 'test' or 'production'
+// Set environment to production by default
+const REDSYS_ENVIRONMENT = process.env.REDSYS_ENVIRONMENT || 'production';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -208,108 +210,112 @@ const { createRedirectForm, processRedirectNotification } = createRedsysAPI({
 // HELPER: Send to FB Conversions API (Updated with new logging)
 // ------------------------------------------------------
 async function sendFacebookConversionEvent(donationRow) {
-    // Import node-fetch for HTTP requests
-    const fetch = (await import('node-fetch')).default;
-
-    // -----------------------------
-    // Update donationRow with missing values:
-    // -----------------------------
-    if (!donationRow.fbclid && donationRow.fbc) {
-        donationRow.fbclid = extractFbclidFromFbc(donationRow.fbc);
-        console.log('[FB Conversion] Extracted fbclid from fbc:', donationRow.fbclid);
-    }
-    if (!donationRow.fbc && donationRow.fbclid) {
-        donationRow.fbc = generateFbc(donationRow.fbclid);
-        console.log('[FB Conversion] Generated fbc from fbclid:', donationRow.fbc);
-    }
-    if (!donationRow.fbp) {
-        donationRow.fbp = generateFbp();
-        console.log('[FB Conversion] Generated new fbp:', donationRow.fbp);
-    }
-    // Get country code from IP address (if available)
-    let country = null;
-    if (donationRow.client_ip_address) {
-        country = await getCountryFromIP(donationRow.client_ip_address);
-        console.log('[FB Conversion] Country code from IP:', country);
-    }
-
-    // -----------------------------
-    // Prepare the user_data object for FB event.
-    // IMPORTANT: fbclid is NOT sent directly.
-    // -----------------------------
-    const userData = {};
-    if (donationRow.fbp) userData.fbp = donationRow.fbp;
-    if (donationRow.fbc) userData.fbc = donationRow.fbc;
-    if (donationRow.client_ip_address) userData.client_ip_address = donationRow.client_ip_address;
-    if (donationRow.client_user_agent) userData.client_user_agent = donationRow.client_user_agent;
-    if (country) userData.country = crypto.createHash('sha256').update(country.toLowerCase()).digest('hex'); // Use the two-letter ISO country code
-
-    console.log('[FB Conversion] User data prepared:', userData);
-
-    const eventSourceUrl = 'http://ituberus.github.io/fbcid/thanks.html'; // Adjust if necessary
-    const finalEventId = donationRow.order_id || String(donationRow.id);
-
-    // -----------------------------
-    // Prepare event data as required by Facebook Conversions API
-    // -----------------------------
-    const eventData = {
-        event_name: 'Purchase',
-        event_time: Math.floor(Date.now() / 1000),
-        event_id: finalEventId,
-        event_source_url: eventSourceUrl,
-        action_source: 'website',
-        user_data: userData,
-        custom_data: {
-            value: donationRow.donation_amount ? donationRow.donation_amount / 100 : 0,
-            currency: 'EUR'
-        },
-    };
-
-    // Log the eventData before sending
-    console.log('[FB Conversion] Event data prepared to be sent:', JSON.stringify(eventData, null, 2));
-
-    const payload = {
-        data: [eventData],
-    };
-
-    if (FACEBOOK_TEST_EVENT_CODE) {
-        payload.test_event_code = FACEBOOK_TEST_EVENT_CODE;
-    }
-
-    // Log the complete payload
-    console.log('[FB Conversion] Complete payload to be sent:', JSON.stringify(payload, null, 2));
-
-    const url = `https://graph.facebook.com/v15.0/${FACEBOOK_PIXEL_ID}/events?access_token=${FACEBOOK_ACCESS_TOKEN}`;
-
-    // -----------------------------
-    // Send the event to Facebook
-    // -----------------------------
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload),
-    });
-
-    // Log the raw response from Facebook
-    const responseText = await response.text();
-    console.log('[FB Conversion] Raw response from Facebook:', responseText);
-
-    if (!response.ok) {
-        console.error('[FB Conversion] Error response from FB:', response.status, responseText);
-        throw new Error(`FB API error: ${response.status} - ${responseText}`);
-    }
-
-    let result;
     try {
-        result = JSON.parse(responseText);
-    } catch (e) {
-        console.error('[FB Conversion] Failed to parse JSON response from FB:', e);
-        throw e;
+        const fetch = (await import('node-fetch')).default;
+
+        // -----------------------------
+        // Update donationRow with missing values:
+        // -----------------------------
+        if (!donationRow.fbclid && donationRow.fbc) {
+            donationRow.fbclid = extractFbclidFromFbc(donationRow.fbc);
+            console.log('[FB Conversion] Extracted fbclid from fbc:', donationRow.fbclid);
+        }
+        if (!donationRow.fbc && donationRow.fbclid) {
+            donationRow.fbc = generateFbc(donationRow.fbclid);
+            console.log('[FB Conversion] Generated fbc from fbclid:', donationRow.fbc);
+        }
+        if (!donationRow.fbp) {
+            donationRow.fbp = generateFbp();
+            console.log('[FB Conversion] Generated new fbp:', donationRow.fbp);
+        }
+        // Get country code from IP address (if available)
+        let country = null;
+        if (donationRow.client_ip_address) {
+            country = await getCountryFromIP(donationRow.client_ip_address);
+            console.log('[FB Conversion] Country code from IP:', country);
+        }
+
+        // -----------------------------
+        // Prepare the user_data object for FB event.
+        // IMPORTANT: fbclid is NOT sent directly.
+        // -----------------------------
+        const userData = {};
+        if (donationRow.fbp) userData.fbp = donationRow.fbp;
+        if (donationRow.fbc) userData.fbc = donationRow.fbc;
+        if (donationRow.client_ip_address) userData.client_ip_address = donationRow.client_ip_address;
+        if (donationRow.client_user_agent) userData.client_user_agent = donationRow.client_user_agent;
+        if (country) userData.country = crypto.createHash('sha256').update(country.toLowerCase()).digest('hex'); // Use the two-letter ISO country code
+
+        console.log('[FB Conversion] User data prepared:', userData);
+
+        const eventSourceUrl = 'http://ituberus.github.io/fbcid/thanks.html'; // Adjust if necessary
+        const finalEventId = donationRow.order_id || String(donationRow.id);
+
+        // -----------------------------
+        // Prepare event data as required by Facebook Conversions API
+        // -----------------------------
+        const eventData = {
+            event_name: 'Purchase',
+            event_time: Math.floor(Date.now() / 1000),
+            event_id: finalEventId,
+            event_source_url: eventSourceUrl,
+            action_source: 'website',
+            user_data: userData,
+            custom_data: {
+                value: donationRow.donation_amount ? donationRow.donation_amount / 100 : 0,
+                currency: 'EUR'
+            },
+        };
+
+        // Log the eventData before sending
+        console.log('[FB Conversion] Event data prepared to be sent:', JSON.stringify(eventData, null, 2));
+
+        const payload = {
+            data: [eventData],
+        };
+
+        if (FACEBOOK_TEST_EVENT_CODE) {
+            payload.test_event_code = FACEBOOK_TEST_EVENT_CODE;
+        }
+
+        // Log the complete payload
+        console.log('[FB Conversion] Complete payload to be sent:', JSON.stringify(payload, null, 2));
+
+        const url = `https://graph.facebook.com/v15.0/${FACEBOOK_PIXEL_ID}/events?access_token=${FACEBOOK_ACCESS_TOKEN}`;
+
+        // -----------------------------
+        // Send the event to Facebook
+        // -----------------------------
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+        });
+
+        // Log the raw response from Facebook
+        const responseText = await response.text();
+        console.log('[FB Conversion] Raw response from Facebook:', responseText);
+
+        if (!response.ok) {
+            console.error('[FB Conversion] Error response from FB:', response.status, responseText);
+            throw new Error(`FB API error: ${response.status} - ${responseText}`);
+        }
+
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (e) {
+            console.error('[FB Conversion] Failed to parse JSON response from FB:', e);
+            throw e;
+        }
+        console.log('[FB Conversion] Facebook conversion result:', result);
+        return { success: true, result };
+    } catch (err) {
+        console.error('[FB Conversion] Error in sendFacebookConversionEvent:', err);
+        throw err;
     }
-    console.log('[FB Conversion] Facebook conversion result:', result);
-    return { success: true, result };
 }
 
 // ------------------------------------------------------
@@ -453,7 +459,8 @@ app.get('/iframe-sis', async (req, res, next) => {
             DS_MERCHANT_CONSUMERLANGUAGE: '2',
             DS_MERCHANT_MERCHANTURL: MERCHANT_MERCHANTURL,
             DS_MERCHANT_URLOK: MERCHANT_URLOK,
-            DS_MERCHANT_URLKO: MERCHANT_URLKO
+            DS_MERCHANT_URLKO: MERCHANT_URLKO,
+            Ds_Merchant_PersoCode: '1'
         };
 
         const form = createRedirectForm(params);
