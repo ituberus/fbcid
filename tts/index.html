@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page 1</title>
+    <title>Home Page</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,56 +13,48 @@
             text-align: center;
         }
         button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
             background-color: #4CAF50;
             color: white;
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px 0;
         }
         button:hover {
             background-color: #45a049;
         }
+        img {
+            max-width: 300px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <div id="content">
-        <h1>This is Page 1</h1>
-        <p>Welcome to the first page!</p>
-        <button id="navButton">Go to Page 2</button>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Handle clicks on navigation button
-            $('#navButton').on('click', function() {
-                // Update URL without page reload
-                history.pushState(null, null, 'page2.html');
-                
-                // Load the page2.html content
-                $('#content').load('page2.html #content > *');
-                
-                // Update page title
-                document.title = 'Page 2';
-            });
-            
-            // Handle browser back/forward buttons
-            window.addEventListener('popstate', function() {
-                // Get current URL path
-                const path = window.location.pathname;
-                const page = path.split('/').pop();
-                
-                if (page === 'index.html' || page === '') {
-                    $('#content').load('index.html #content > *');
-                    document.title = 'Page 1';
-                } else if (page === 'page2.html') {
-                    $('#content').load('page2.html #content > *');
-                    document.title = 'Page 2';
-                }
-            });
-        });
-    </script>
+    <h1>Welcome to the Home Page</h1>
+    
+    <p>This is the index page. Click any of the links below to go to page 2.</p>
+    
+    <button onclick="window.location.href='page2.html'">Go to Page 2</button>
+    
+    <p>You can also <a href="page2.html">click this text link</a> to navigate to page 2.</p>
+    
+    <a href="page2.html">
+        <img src="/api/placeholder/400/300" alt="Clickable placeholder image">
+    </a>
+    <p>Click the image above to go to page 2</p>
+    
+    <script src="router.js"></script>
 </body>
 </html>
