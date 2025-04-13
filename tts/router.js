@@ -89,9 +89,16 @@ function hideLoadingBar(success = true) {
 }
 
 function initRouter() {
-    // Handle all click events on the document
+    // Handle click events on all potential links and buttons
     document.addEventListener('click', (e) => {
-        // Find if a link was clicked
+        // First, check if it's a button with data-href attribute
+        if (e.target.tagName === 'BUTTON' && e.target.getAttribute('data-href')) {
+            e.preventDefault();
+            navigateTo(e.target.getAttribute('data-href'));
+            return;
+        }
+        
+        // Handle regular links - find the nearest anchor tag
         let element = e.target;
         
         // Traverse up the DOM to find if the clicked element or any of its parents is an <a> tag
@@ -151,7 +158,9 @@ function isInternalUrl(url) {
 
 function navigateTo(url) {
     // Don't navigate if it's the current page
-    if (url === window.location.pathname + window.location.search + window.location.hash) {
+    const fullCurrentPath = window.location.pathname + window.location.search + window.location.hash;
+    
+    if (url === fullCurrentPath) {
         return;
     }
     
@@ -189,7 +198,12 @@ function loadContent(url, updateActive) {
             const newContent = contentElement.innerHTML;
             
             // Update the page content
-            document.getElementById('content').innerHTML = newContent;
+            const currentContentElement = document.getElementById('content');
+            if (currentContentElement) {
+                currentContentElement.innerHTML = newContent;
+            } else {
+                throw new Error('Content element not found in the current page');
+            }
             
             // Update page title
             document.title = doc.title;
@@ -221,6 +235,7 @@ function loadContent(url, updateActive) {
                     <div style="padding: 20px; text-align: center;">
                         <h2>Error Loading Page</h2>
                         <p>Sorry, there was a problem loading the requested page.</p>
+                        <p>Error: ${error.message}</p>
                         <button onclick="window.location.reload()">Reload Page</button>
                     </div>
                 `;
